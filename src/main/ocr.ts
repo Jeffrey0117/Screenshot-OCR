@@ -1,4 +1,6 @@
 import Tesseract from 'tesseract.js'
+import { preprocessImage } from './imagePreprocess'
+import { getSettings } from './store'
 
 export interface OcrResult {
   text: string
@@ -64,12 +66,34 @@ export async function recognizeImage(imageData: string): Promise<OcrResult> {
   console.log('Starting OCR recognition...')
 
   try {
+    // Preprocess image if enabled
+    const settings = getSettings()
+    let processedImage = imageData
+
+    if (settings.preprocessEnabled !== false) {
+      console.log('Preprocessing image...')
+      processedImage = await preprocessImage(imageData, {
+        scale: 2,           // 放大 2 倍（太大會造成幻覺）
+        grayscale: true,
+        invert: settings.preprocessAutoInvert !== false ? 'auto' : false,
+        contrast: 1.5,      // 適中對比度
+        threshold: 0,       // 關閉二值化，避免幻覺
+        sharpen: false      // 關閉銳化，避免雜訊
+      })
+    }
+
     // Convert data URL to buffer if needed
-    let imageBuffer: string | Buffer = imageData
-    if (imageData.startsWith('data:')) {
-      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '')
+    let imageBuffer: string | Buffer = processedImage
+    if (processedImage.startsWith('data:')) {
+      const base64Data = processedImage.replace(/^data:image\/\w+;base64,/, '')
       imageBuffer = Buffer.from(base64Data, 'base64')
     }
+
+    // Set Tesseract parameters for better character recognition
+    await worker.setParameters({
+      tessedit_char_whitelist: '', // Allow all characters
+      preserve_interword_spaces: '1',
+    })
 
     const result = await worker.recognize(imageBuffer)
 

@@ -19,6 +19,20 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [screenshot, setScreenshot] = useState<string | null>(null)
 
+  // Load and apply theme on startup
+  useEffect(() => {
+    const loadTheme = async () => {
+      const settings = await window.electronAPI.getSettings() as { theme?: string }
+      applyTheme(settings.theme || 'dark')
+    }
+    loadTheme()
+  }, [])
+
+  // Apply theme to document
+  const applyTheme = (theme: string) => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }
+
   useEffect(() => {
     // Check URL hash for capture mode
     if (window.location.hash === '#/capture') {
@@ -100,6 +114,14 @@ function App() {
     setView('result')
   }
 
+  const handleRecrop = (croppedImage: string) => {
+    // Re-run OCR with the cropped image
+    setIsLoading(true)
+    setError(null)
+    setResult({ image: croppedImage, text: '' })
+    window.electronAPI.captureComplete(croppedImage)
+  }
+
   // Render based on view
   if (view === 'capture' && screenshot) {
     return (
@@ -142,6 +164,7 @@ function App() {
       onTogglePin={handleTogglePin}
       onOpenSettings={() => setView('settings')}
       onOpenHistory={() => setView('history')}
+      onRecrop={handleRecrop}
     />
   )
 }

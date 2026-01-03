@@ -17,6 +17,8 @@ interface AppSettings {
   }
   ocrLanguages: string[]
   ocrAccuracy: 'fast' | 'balanced' | 'accurate'
+  preprocessEnabled: boolean
+  preprocessAutoInvert: boolean
   theme: 'light' | 'dark' | 'system'
 }
 
@@ -39,13 +41,15 @@ export function Settings({ onClose }: SettingsProps) {
 
   const loadSettings = async () => {
     const loaded = await window.electronAPI.getSettings()
-    setSettings(loaded as AppSettings)
+    setSettings(loaded as unknown as AppSettings)
   }
 
   const saveSettings = async () => {
     if (!settings) return
     setSaving(true)
-    await window.electronAPI.updateSettings(settings)
+    await window.electronAPI.updateSettings(settings as unknown as Record<string, unknown>)
+    // Apply theme immediately
+    document.documentElement.setAttribute('data-theme', settings.theme)
     setSaving(false)
   }
 
@@ -201,6 +205,29 @@ export function Settings({ onClose }: SettingsProps) {
                   onChange={() => handleChange('ocrAccuracy', 'accurate')}
                 />
                 <span>精確</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="setting-item">
+            <label>圖片預處理</label>
+            <div className="checkbox-group">
+              <label className="setting-item checkbox">
+                <input
+                  type="checkbox"
+                  checked={settings.preprocessEnabled}
+                  onChange={e => handleChange('preprocessEnabled', e.target.checked)}
+                />
+                <span>啟用預處理（提升辨識率）</span>
+              </label>
+              <label className="setting-item checkbox">
+                <input
+                  type="checkbox"
+                  checked={settings.preprocessAutoInvert}
+                  onChange={e => handleChange('preprocessAutoInvert', e.target.checked)}
+                  disabled={!settings.preprocessEnabled}
+                />
+                <span>自動反轉深色背景</span>
               </label>
             </div>
           </div>

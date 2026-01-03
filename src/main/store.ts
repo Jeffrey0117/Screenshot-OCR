@@ -25,6 +25,8 @@ export interface AppSettings {
   // OCR
   ocrLanguages: string[]
   ocrAccuracy: 'fast' | 'balanced' | 'accurate'
+  preprocessEnabled: boolean
+  preprocessAutoInvert: boolean
 
   // Appearance
   theme: 'light' | 'dark' | 'system'
@@ -47,6 +49,8 @@ const defaults: AppSettings = {
 
   ocrLanguages: ['eng', 'chi_tra'],
   ocrAccuracy: 'balanced',
+  preprocessEnabled: true,
+  preprocessAutoInvert: true,
 
   theme: 'dark',
   resultPosition: 'center'

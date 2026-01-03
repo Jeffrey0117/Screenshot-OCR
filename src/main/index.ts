@@ -190,10 +190,43 @@ function registerShortcuts() {
 }
 
 /**
+ * Hide/show system cursor using Windows API
+ */
+function setCursorVisibility(visible: boolean): void {
+  if (process.platform !== 'win32') return
+
+  try {
+    // Use PowerShell to hide/show cursor via Windows API
+    const { execSync } = require('child_process')
+    const script = visible
+      ? `Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern int ShowCursor(bool bShow);' -Name Win32 -Namespace System; while([System.Win32]::ShowCursor($true) -lt 0){}`
+      : `Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern int ShowCursor(bool bShow);' -Name Win32 -Namespace System; while([System.Win32]::ShowCursor($false) -ge 0){}`
+
+    execSync(`powershell -Command "${script}"`, { windowsHide: true })
+    console.log(`Cursor ${visible ? 'shown' : 'hidden'}`)
+  } catch (e) {
+    console.log('Failed to toggle cursor visibility:', e)
+  }
+}
+
+/**
  * Start screen capture
  */
 async function startCapture() {
   console.log('Starting capture...')
+
+  // Hide main window before capturing to avoid capturing our own UI
+  const wasMainWindowVisible = mainWindow?.isVisible() ?? false
+  if (wasMainWindowVisible) {
+    mainWindow?.hide()
+    console.log('Main window hidden before capture')
+  }
+
+  // Hide cursor before screenshot
+  setCursorVisibility(false)
+
+  // Wait a bit for the window and cursor to fully hide
+  await new Promise(resolve => setTimeout(resolve, 150))
 
   if (!captureWindow) {
     console.log('Creating capture window...')
@@ -206,6 +239,9 @@ async function startCapture() {
     types: ['screen'],
     thumbnailSize: screen.getPrimaryDisplay().size
   })
+
+  // Restore cursor immediately after screenshot
+  setCursorVisibility(true)
 
   console.log('Found sources:', sources.length)
 
