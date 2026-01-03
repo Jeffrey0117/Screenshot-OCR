@@ -5,12 +5,14 @@
   background: var(--bg-primary);
 }
 
-.result-popup.empty {
+/* Empty state */
+.empty-content {
+  flex: 1;
+  display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   color: var(--text-secondary);
@@ -31,6 +33,18 @@
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   -webkit-app-region: drag;
+}
+
+.popup-title-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.popup-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
 }
 
 .popup-title {

@@ -96,13 +96,56 @@ export function ResultPopup({
     onTogglePin()
   }
 
+  // Title bar component (shared between empty and result states)
+  const titleBar = (
+    <div className="popup-titlebar">
+      <div className="popup-title-left">
+        <img src="/icon.png" alt="Logo" className="popup-logo" />
+        <span className="popup-title">Screenshot OCR</span>
+      </div>
+      <div className="popup-controls">
+        <button
+          className={`control-btn ${isPinned ? 'active' : ''}`}
+          onClick={handleTogglePin}
+          title="釘選視窗"
+        >
+          📌
+        </button>
+        <button
+          className="control-btn"
+          onClick={onOpenHistory}
+          title="歷史紀錄"
+        >
+          🕒
+        </button>
+        <button
+          className="control-btn"
+          onClick={onOpenSettings}
+          title="設定"
+        >
+          ⚙️
+        </button>
+        <button
+          className="control-btn close"
+          onClick={onClose}
+          title="關閉"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  )
+
   // No result yet
   if (!result && !isLoading && !error) {
     return (
       <div className="result-popup empty">
-        <div className="empty-state">
-          <div className="empty-icon">📷</div>
-          <p>按 Ctrl+Shift+S 截圖辨識</p>
+        {titleBar}
+        <div className="empty-content">
+          <div className="empty-state">
+            <div className="empty-icon">📷</div>
+            <p>按 Ctrl+Shift+S 截圖辨識</p>
+          </div>
         </div>
       </div>
     )
@@ -110,40 +153,7 @@ export function ResultPopup({
 
   return (
     <div className="result-popup">
-      {/* Title bar */}
-      <div className="popup-titlebar">
-        <span className="popup-title">Screenshot OCR</span>
-        <div className="popup-controls">
-          <button
-            className={`control-btn ${isPinned ? 'active' : ''}`}
-            onClick={handleTogglePin}
-            title="釘選視窗"
-          >
-            📌
-          </button>
-          <button
-            className="control-btn"
-            onClick={onOpenHistory}
-            title="歷史紀錄"
-          >
-            🕒
-          </button>
-          <button
-            className="control-btn"
-            onClick={onOpenSettings}
-            title="設定"
-          >
-            ⚙️
-          </button>
-          <button
-            className="control-btn close"
-            onClick={onClose}
-            title="關閉"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
+      {titleBar}
 
       {/* Content */}
       <div className="popup-content">

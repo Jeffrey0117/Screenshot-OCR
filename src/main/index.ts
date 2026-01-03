@@ -107,17 +107,27 @@ function createCaptureWindow() {
  * Create system tray
  */
 function createTray() {
-  // Use a simple icon (you can replace with actual icon file)
+  // Get the correct assets path
+  // In dev: app.getAppPath() returns the project root
+  // In prod: use process.resourcesPath
   const iconPath = isDev
-    ? path.join(__dirname, '../../assets/tray-icon.png')
+    ? path.join(app.getAppPath(), 'assets/tray-icon.png')
     : path.join(process.resourcesPath, 'assets/tray-icon.png')
 
-  // Create a simple icon if file doesn't exist
+  console.log('Tray icon path:', iconPath)
+  console.log('App path:', app.getAppPath())
+
+  // Create tray icon
   let trayIcon: Electron.NativeImage
   try {
     trayIcon = nativeImage.createFromPath(iconPath)
-  } catch {
-    // Create a simple 16x16 icon
+    // Resize for tray (16x16 or 32x32 for HiDPI)
+    if (!trayIcon.isEmpty()) {
+      trayIcon = trayIcon.resize({ width: 16, height: 16 })
+    }
+    console.log('Tray icon loaded, isEmpty:', trayIcon.isEmpty())
+  } catch (err) {
+    console.error('Failed to load tray icon:', err)
     trayIcon = nativeImage.createEmpty()
   }
 
