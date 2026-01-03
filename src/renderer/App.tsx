@@ -122,6 +122,13 @@ function App() {
     window.electronAPI.captureComplete(croppedImage)
   }
 
+  const handleTextEdit = (newText: string) => {
+    // 用戶手動編輯文字後更新結果
+    if (result) {
+      setResult({ ...result, text: newText })
+    }
+  }
+
   // Render based on view
   if (view === 'capture' && screenshot) {
     return (
@@ -165,6 +172,7 @@ function App() {
       onOpenSettings={() => setView('settings')}
       onOpenHistory={() => setView('history')}
       onRecrop={handleRecrop}
+      onTextEdit={handleTextEdit}
     />
   )
 }

@@ -19,6 +19,7 @@ interface ResultPopupProps {
   onOpenSettings: () => void
   onOpenHistory: () => void
   onRecrop?: (croppedImage: string) => void
+  onTextEdit?: (newText: string) => void
 }
 
 export function ResultPopup({
@@ -32,7 +33,8 @@ export function ResultPopup({
   onTogglePin,
   onOpenSettings,
   onOpenHistory,
-  onRecrop
+  onRecrop,
+  onTextEdit
 }: ResultPopupProps) {
   const [isPinned, setIsPinned] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -282,17 +284,24 @@ export function ResultPopup({
           </div>
         )}
 
-        {/* Text result */}
-        {!isLoading && !error && result?.text && (
-          <div className="result-text" ref={textRef}>
-            {result.text}
-          </div>
-        )}
-
-        {/* Empty result */}
-        {!isLoading && !error && result && !result.text && (
-          <div className="result-empty">
-            <span>未偵測到文字</span>
+        {/* Text result - editable */}
+        {!isLoading && !error && result && (
+          <div
+            className="result-text"
+            ref={textRef}
+            contentEditable
+            suppressContentEditableWarning
+            spellCheck={false}
+            onBlur={(e) => {
+              // 當用戶編輯完成後，更新結果
+              const newText = e.currentTarget.textContent || ''
+              if (newText !== result.text && onTextEdit) {
+                onTextEdit(newText)
+              }
+            }}
+            data-placeholder="點擊此處輸入或修正文字..."
+          >
+            {result.text || ''}
           </div>
         )}
 

@@ -176,7 +176,7 @@
   text-align: center;
 }
 
-/* Text result */
+/* Text result - editable */
 .result-text {
   flex: 1;
   padding: 0.75rem;
@@ -188,6 +188,20 @@
   user-select: text;
   cursor: text;
   line-height: 1.6;
+  outline: none;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+  min-height: 60px;
+}
+
+.result-text:focus {
+  border-color: var(--accent);
+}
+
+.result-text:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 /* Empty result */

@@ -75,7 +75,7 @@ function createMainWindow() {
  */
 function createCaptureWindow() {
   const primaryDisplay = screen.getPrimaryDisplay()
-  const { width, height } = primaryDisplay.workAreaSize
+  const { width, height } = primaryDisplay.size  // 用完整螢幕尺寸，不是 workArea
 
   captureWindow = new BrowserWindow({
     width,
@@ -88,7 +88,8 @@ function createCaptureWindow() {
     resizable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
-    fullscreen: true,
+    fullscreen: false,  // 不用 fullscreen，直接用完整尺寸更快
+    enableLargerThanScreen: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -190,70 +191,43 @@ function registerShortcuts() {
 }
 
 /**
- * Hide/show system cursor using Windows API
- */
-function setCursorVisibility(visible: boolean): void {
-  if (process.platform !== 'win32') return
-
-  try {
-    // Use PowerShell to hide/show cursor via Windows API
-    const { execSync } = require('child_process')
-    const script = visible
-      ? `Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern int ShowCursor(bool bShow);' -Name Win32 -Namespace System; while([System.Win32]::ShowCursor($true) -lt 0){}`
-      : `Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern int ShowCursor(bool bShow);' -Name Win32 -Namespace System; while([System.Win32]::ShowCursor($false) -ge 0){}`
-
-    execSync(`powershell -Command "${script}"`, { windowsHide: true })
-    console.log(`Cursor ${visible ? 'shown' : 'hidden'}`)
-  } catch (e) {
-    console.log('Failed to toggle cursor visibility:', e)
-  }
-}
-
-/**
  * Start screen capture
  */
 async function startCapture() {
   console.log('Starting capture...')
 
   // Hide main window before capturing to avoid capturing our own UI
-  const wasMainWindowVisible = mainWindow?.isVisible() ?? false
-  if (wasMainWindowVisible) {
-    mainWindow?.hide()
-    console.log('Main window hidden before capture')
+  if (mainWindow?.isVisible()) {
+    mainWindow.hide()
   }
 
-  // Hide cursor before screenshot
-  setCursorVisibility(false)
-
-  // Wait a bit for the window and cursor to fully hide
-  await new Promise(resolve => setTimeout(resolve, 150))
-
+  // 預先建立 capture window（如果還沒有的話）
   if (!captureWindow) {
-    console.log('Creating capture window...')
     createCaptureWindow()
   }
 
-  // Get screen screenshot first
-  console.log('Getting desktop sources...')
+  // 取得高解析度截圖
+  const display = screen.getPrimaryDisplay()
+  const scaleFactor = display.scaleFactor || 1
+  const { width, height } = display.size
+
+  console.log(`Capturing at ${width}x${height} (scale: ${scaleFactor})`)
+
   const sources = await desktopCapturer.getSources({
     types: ['screen'],
-    thumbnailSize: screen.getPrimaryDisplay().size
+    thumbnailSize: {
+      width: Math.floor(width * scaleFactor),
+      height: Math.floor(height * scaleFactor)
+    }
   })
-
-  // Restore cursor immediately after screenshot
-  setCursorVisibility(true)
-
-  console.log('Found sources:', sources.length)
 
   if (sources.length > 0) {
     const screenshot = sources[0].thumbnail.toDataURL()
-    console.log('Screenshot captured, sending to renderer...')
     captureWindow?.webContents.send('screenshot-ready', screenshot)
   }
 
   captureWindow?.show()
   captureWindow?.focus()
-  console.log('Capture window shown')
 }
 
 /**
