@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { ScreenCapture } from './components/ScreenCapture'
 import { ResultPopup } from './components/ResultPopup'
 import { Settings } from './components/Settings'
+import { History } from './components/History'
 
-type View = 'result' | 'capture' | 'settings'
+type View = 'result' | 'capture' | 'settings' | 'history'
 
 interface OcrResult {
   image: string
@@ -83,6 +84,10 @@ function App() {
     window.electronAPI.googleSearch(text)
   }
 
+  const handleInstagram = (text: string) => {
+    window.electronAPI.instagramSearch(text)
+  }
+
   const handleClose = () => {
     window.electronAPI.closeResult()
   }
@@ -110,6 +115,21 @@ function App() {
     return <Settings onClose={handleSettingsClose} />
   }
 
+  if (view === 'history') {
+    return (
+      <History
+        onClose={() => setView('result')}
+        onCopy={handleCopy}
+        onSearch={handleSearch}
+        onInstagram={handleInstagram}
+        onSelectItem={(item) => {
+          setResult({ image: item.image, text: item.text })
+          setView('result')
+        }}
+      />
+    )
+  }
+
   return (
     <ResultPopup
       result={result}
@@ -117,9 +137,11 @@ function App() {
       error={error}
       onCopy={handleCopy}
       onSearch={handleSearch}
+      onInstagram={handleInstagram}
       onClose={handleClose}
       onTogglePin={handleTogglePin}
       onOpenSettings={() => setView('settings')}
+      onOpenHistory={() => setView('history')}
     />
   )
 }

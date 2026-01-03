@@ -1,6 +1,4 @@
 import Tesseract from 'tesseract.js'
-import path from 'path'
-import { app } from 'electron'
 
 export interface OcrResult {
   text: string
@@ -15,20 +13,9 @@ export interface OcrResult {
 let worker: Tesseract.Worker | null = null
 let currentLanguages: string[] = []
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
-
-/**
- * Get tessdata path based on environment
- */
-function getTessdataPath(): string {
-  if (isDev) {
-    return path.join(__dirname, '../../assets/tessdata')
-  }
-  return path.join(process.resourcesPath, 'tessdata')
-}
-
 /**
  * Initialize OCR worker
+ * Tesseract.js 5.x automatically downloads language files from CDN
  */
 export async function initOcr(languages: string[] = ['eng', 'chi_tra']): Promise<void> {
   // If worker exists with same languages, skip
@@ -45,14 +32,15 @@ export async function initOcr(languages: string[] = ['eng', 'chi_tra']): Promise
   console.log('Initializing OCR with languages:', languages)
 
   const langString = languages.join('+')
-  const tessdataPath = getTessdataPath()
 
   try {
+    // Tesseract.js 5.x will auto-download language data from CDN
     worker = await Tesseract.createWorker(langString, 1, {
-      langPath: tessdataPath,
       logger: (m) => {
         if (m.status === 'recognizing text') {
           console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
+        } else {
+          console.log(`OCR: ${m.status}`)
         }
       }
     })

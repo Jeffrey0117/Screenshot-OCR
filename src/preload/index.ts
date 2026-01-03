@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   googleSearch: (text: string) => {
     ipcRenderer.send('google-search', text)
   },
+  instagramSearch: (text: string) => {
+    ipcRenderer.send('instagram-search', text)
+  },
   closeResult: () => {
     ipcRenderer.send('close-result')
   },
@@ -50,6 +53,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   updateSettings: (settings: Record<string, unknown>) => {
     return ipcRenderer.invoke('update-settings', settings)
+  },
+
+  // History
+  getHistory: () => {
+    return ipcRenderer.invoke('get-history')
+  },
+  deleteHistoryItem: (id: string) => {
+    return ipcRenderer.invoke('delete-history-item', id)
+  },
+  clearHistory: () => {
+    return ipcRenderer.invoke('clear-history')
   },
 
   // Cleanup listeners
@@ -77,10 +91,14 @@ declare global {
       onShowSettings: (callback: () => void) => void
       copyText: (text: string) => void
       googleSearch: (text: string) => void
+      instagramSearch: (text: string) => void
       closeResult: () => void
       togglePin: () => void
       getSettings: () => Promise<Record<string, unknown>>
       updateSettings: (settings: Record<string, unknown>) => Promise<Record<string, unknown>>
+      getHistory: () => Promise<Array<{ id: string; image: string; text: string; timestamp: number }>>
+      deleteHistoryItem: (id: string) => Promise<Array<{ id: string; image: string; text: string; timestamp: number }>>
+      clearHistory: () => Promise<Array<never>>
       removeAllListeners: () => void
     }
   }

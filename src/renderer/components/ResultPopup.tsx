@@ -13,9 +13,11 @@ interface ResultPopupProps {
   error: string | null
   onCopy: (text: string) => void
   onSearch: (text: string) => void
+  onInstagram: (text: string) => void
   onClose: () => void
   onTogglePin: () => void
   onOpenSettings: () => void
+  onOpenHistory: () => void
 }
 
 export function ResultPopup({
@@ -24,9 +26,11 @@ export function ResultPopup({
   error,
   onCopy,
   onSearch,
+  onInstagram,
   onClose,
   onTogglePin,
-  onOpenSettings
+  onOpenSettings,
+  onOpenHistory
 }: ResultPopupProps) {
   const [isPinned, setIsPinned] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -119,6 +123,13 @@ export function ResultPopup({
           </button>
           <button
             className="control-btn"
+            onClick={onOpenHistory}
+            title="歷史紀錄"
+          >
+            🕒
+          </button>
+          <button
+            className="control-btn"
             onClick={onOpenSettings}
             title="設定"
           >
@@ -194,7 +205,14 @@ export function ResultPopup({
           onClick={handleSearch}
           disabled={!result?.text}
         >
-          🔍 Google 搜尋
+          🔍 Google
+        </button>
+        <button
+          className="action-btn instagram"
+          onClick={() => onInstagram(selectedText || result?.text || '')}
+          disabled={!result?.text}
+        >
+          📷 IG
         </button>
       </div>
 

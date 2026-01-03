@@ -26,3 +26,4 @@ npm-debug.log*
 
 # Tesseract language files (download separately)
 assets/tessdata/*.traineddata
+*.traineddata

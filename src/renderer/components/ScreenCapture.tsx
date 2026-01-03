@@ -97,6 +97,11 @@ export function ScreenCapture({ screenshot, onComplete, onCancel }: ScreenCaptur
 
   // Handle mouse events
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Right click to cancel
+    if (e.button === 2) {
+      onCancel()
+      return
+    }
     setIsSelecting(true)
     setSelection({
       startX: e.clientX,
@@ -104,6 +109,12 @@ export function ScreenCapture({ screenshot, onComplete, onCancel }: ScreenCaptur
       endX: e.clientX,
       endY: e.clientY
     })
+  }
+
+  // Handle right click (context menu)
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    onCancel()
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -185,10 +196,11 @@ export function ScreenCapture({ screenshot, onComplete, onCancel }: ScreenCaptur
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onContextMenu={handleContextMenu}
       />
       <div className="capture-instructions">
         <span>拖曳選取區域</span>
-        <span className="shortcut">ESC 取消</span>
+        <span className="shortcut">右鍵 / ESC 取消</span>
       </div>
     </div>
   )

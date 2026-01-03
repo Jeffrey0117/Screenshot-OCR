@@ -12,11 +12,9 @@ import {
   desktopCapturer
 } from 'electron'
 import path from 'path'
-import { createStore, getSettings, updateSettings } from './store'
+import { createStore, getSettings, updateSettings, addToHistory, getHistory, deleteHistoryItem, clearHistory } from './store'
 import { initOcr, recognizeImage, terminateOcr } from './ocr'
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling
-if (require('electron-squirrel-startup')) app.quit()
 
 let mainWindow: BrowserWindow | null = null
 let captureWindow: BrowserWindow | null = null
@@ -25,9 +23,10 @@ let lastResult: { image: string; text: string } | null = null
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
-// Renderer URL
+// Renderer URL - electron-vite uses 5173 by default, falls back to other ports if busy
+const DEV_SERVER_PORT = process.env.DEV_SERVER_PORT || '5173'
 const RENDERER_URL = isDev
-  ? 'http://localhost:5174'
+  ? `http://localhost:${DEV_SERVER_PORT}`
   : `file://${path.join(__dirname, '../dist/index.html')}`
 
 /**
@@ -114,7 +113,7 @@ function createTray() {
     : path.join(process.resourcesPath, 'assets/tray-icon.png')
 
   // Create a simple icon if file doesn't exist
-  let trayIcon: nativeImage
+  let trayIcon: Electron.NativeImage
   try {
     trayIcon = nativeImage.createFromPath(iconPath)
   } catch {
@@ -167,12 +166,16 @@ function registerShortcuts() {
   globalShortcut.unregisterAll()
 
   // Register capture shortcut
+  console.log('Registering shortcut:', settings.shortcuts.capture)
   const registered = globalShortcut.register(settings.shortcuts.capture, () => {
+    console.log('Capture shortcut triggered!')
     startCapture()
   })
 
   if (!registered) {
-    console.error('Failed to register capture shortcut')
+    console.error('Failed to register capture shortcut:', settings.shortcuts.capture)
+  } else {
+    console.log('Shortcut registered successfully!')
   }
 }
 
@@ -180,23 +183,31 @@ function registerShortcuts() {
  * Start screen capture
  */
 async function startCapture() {
+  console.log('Starting capture...')
+
   if (!captureWindow) {
+    console.log('Creating capture window...')
     createCaptureWindow()
   }
 
   // Get screen screenshot first
+  console.log('Getting desktop sources...')
   const sources = await desktopCapturer.getSources({
     types: ['screen'],
     thumbnailSize: screen.getPrimaryDisplay().size
   })
 
+  console.log('Found sources:', sources.length)
+
   if (sources.length > 0) {
     const screenshot = sources[0].thumbnail.toDataURL()
+    console.log('Screenshot captured, sending to renderer...')
     captureWindow?.webContents.send('screenshot-ready', screenshot)
   }
 
   captureWindow?.show()
   captureWindow?.focus()
+  console.log('Capture window shown')
 }
 
 /**
@@ -248,6 +259,12 @@ async function processCapturedRegion(imageData: string) {
       image: imageData,
       text: result.text
     }
+
+    // Add to history
+    addToHistory({
+      image: imageData,
+      text: result.text
+    })
 
     // Send result to renderer
     mainWindow?.webContents.send('ocr-result', {
@@ -319,6 +336,13 @@ function setupIpcHandlers() {
     shell.openExternal(`https://www.google.com/search?q=${query}`)
   })
 
+  // Instagram search - directly go to profile
+  ipcMain.on('instagram-search', (_event, text: string) => {
+    // Remove @ if present and trim whitespace
+    const username = text.replace('@', '').trim()
+    shell.openExternal(`https://www.instagram.com/${username}`)
+  })
+
   // Close result window
   ipcMain.on('close-result', () => {
     mainWindow?.hide()
@@ -340,6 +364,21 @@ function setupIpcHandlers() {
     updateSettings(newSettings)
     registerShortcuts() // Re-register shortcuts if changed
     return getSettings()
+  })
+
+  // History handlers
+  ipcMain.handle('get-history', () => {
+    return getHistory()
+  })
+
+  ipcMain.handle('delete-history-item', (_event, id: string) => {
+    deleteHistoryItem(id)
+    return getHistory()
+  })
+
+  ipcMain.handle('clear-history', () => {
+    clearHistory()
+    return []
   })
 }
 

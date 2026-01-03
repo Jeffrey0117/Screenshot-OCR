@@ -1,5 +1,12 @@
 import Store from 'electron-store'
 
+export interface HistoryItem {
+  id: string
+  image: string
+  text: string
+  timestamp: number
+}
+
 export interface AppSettings {
   // General
   autoStart: boolean
@@ -81,4 +88,50 @@ export function setSetting<K extends keyof AppSettings>(key: K, value: AppSettin
     store = new Store<AppSettings>({ defaults })
   }
   store.set(key, value)
+}
+
+// History management
+const MAX_HISTORY_ITEMS = 50
+
+let historyStore: Store<{ history: HistoryItem[] }> | null = null
+
+function getHistoryStore() {
+  if (!historyStore) {
+    historyStore = new Store<{ history: HistoryItem[] }>({
+      name: 'history',
+      defaults: { history: [] }
+    })
+  }
+  return historyStore
+}
+
+export function getHistory(): HistoryItem[] {
+  return getHistoryStore().get('history', [])
+}
+
+export function addToHistory(item: Omit<HistoryItem, 'id' | 'timestamp'>): HistoryItem {
+  const store = getHistoryStore()
+  const history = store.get('history', [])
+
+  const newItem: HistoryItem = {
+    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+    timestamp: Date.now(),
+    ...item
+  }
+
+  // Add to beginning, limit to MAX_HISTORY_ITEMS
+  const updatedHistory = [newItem, ...history].slice(0, MAX_HISTORY_ITEMS)
+  store.set('history', updatedHistory)
+
+  return newItem
+}
+
+export function deleteHistoryItem(id: string): void {
+  const store = getHistoryStore()
+  const history = store.get('history', [])
+  store.set('history', history.filter(item => item.id !== id))
+}
+
+export function clearHistory(): void {
+  getHistoryStore().set('history', [])
 }
