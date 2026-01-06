@@ -80,8 +80,12 @@ function App() {
     }
   }, [])
 
-  const handleCaptureComplete = (imageData: string) => {
-    window.electronAPI.captureComplete(imageData)
+  const handleCaptureComplete = (
+    imageData: string,
+    screenBounds: { x: number; y: number; width: number; height: number }
+  ) => {
+    // 傳遞圖片和螢幕座標（用於 UI Automation）
+    window.electronAPI.captureComplete({ imageData, screenBounds })
     setScreenshot(null)
   }
 

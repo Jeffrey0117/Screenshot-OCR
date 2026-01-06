@@ -5,6 +5,8 @@ interface OcrResult {
   image: string
   text: string
   confidence?: number
+  method?: string
+  methodDisplay?: string
 }
 
 interface ResultPopupProps {
@@ -305,10 +307,10 @@ export function ResultPopup({
           </div>
         )}
 
-        {/* Confidence */}
-        {result?.confidence !== undefined && (
+        {/* Method & Confidence */}
+        {result && !isLoading && (
           <div className="result-confidence">
-            信心度: {Math.round(result.confidence)}%
+            {result.methodDisplay || (result.confidence !== undefined ? `信心度: ${Math.round(result.confidence)}%` : '')}
           </div>
         )}
       </div>

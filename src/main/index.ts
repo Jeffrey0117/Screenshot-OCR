@@ -13,7 +13,8 @@ import {
 } from 'electron'
 import path from 'path'
 import { createStore, getSettings, updateSettings, addToHistory, getHistory, deleteHistoryItem, clearHistory } from './store'
-import { initOcr, recognizeImage, terminateOcr } from './ocr'
+import { initOcr, terminateOcr } from './ocr'
+import { extractText, formatConfidence } from './textExtractor'
 
 
 let mainWindow: BrowserWindow | null = null
@@ -260,8 +261,13 @@ function showSettings() {
 
 /**
  * Process captured region
+ * @param imageData - base64 截圖
+ * @param screenBounds - 選取區域的螢幕座標（用於 UI Automation）
  */
-async function processCapturedRegion(imageData: string) {
+async function processCapturedRegion(
+  imageData: string,
+  screenBounds?: { x: number; y: number; width: number; height: number }
+) {
   if (!mainWindow) {
     createMainWindow()
   }
@@ -272,8 +278,12 @@ async function processCapturedRegion(imageData: string) {
   mainWindow?.focus()
 
   try {
-    // Perform OCR
-    const result = await recognizeImage(imageData)
+    // 使用統一文字擷取（優先 UI Automation，fallback 到 OCR）
+    const result = await extractText({
+      imageData,
+      screenBounds,
+      tryUIAutomation: !!screenBounds
+    })
 
     lastResult = {
       image: imageData,
@@ -286,11 +296,13 @@ async function processCapturedRegion(imageData: string) {
       text: result.text
     })
 
-    // Send result to renderer
+    // Send result to renderer (包含擷取方法資訊)
     mainWindow?.webContents.send('ocr-result', {
       image: imageData,
       text: result.text,
-      confidence: result.confidence
+      confidence: result.confidence,
+      method: result.method,
+      methodDisplay: formatConfidence(result.method, result.confidence)
     })
 
     // Auto copy if enabled
@@ -334,10 +346,25 @@ async function processCapturedRegion(imageData: string) {
 
 // IPC Handlers
 function setupIpcHandlers() {
-  // Capture completed
-  ipcMain.on('capture-complete', (_event, imageData: string) => {
+  // Capture completed (含螢幕座標，用於 UI Automation)
+  ipcMain.on('capture-complete', (_event, data: {
+    imageData: string
+    screenBounds?: { x: number; y: number; width: number; height: number }
+  } | string) => {
     captureWindow?.hide()
-    processCapturedRegion(imageData)
+
+    // Debug log
+    console.log('capture-complete received:', typeof data, typeof data === 'object' ? Object.keys(data) : data?.substring?.(0, 50))
+
+    // 支援舊格式（純字串）和新格式（物件）
+    if (typeof data === 'string') {
+      processCapturedRegion(data)
+    } else if (data && typeof data === 'object' && typeof data.imageData === 'string') {
+      processCapturedRegion(data.imageData, data.screenBounds)
+    } else {
+      console.error('Invalid capture-complete data:', data)
+      mainWindow?.webContents.send('ocr-error', { message: 'Invalid capture data format' })
+    }
   })
 
   // Capture cancelled

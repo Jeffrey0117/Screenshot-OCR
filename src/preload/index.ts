@@ -6,8 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onScreenshotReady: (callback: (screenshot: string) => void) => {
     ipcRenderer.on('screenshot-ready', (_event, screenshot) => callback(screenshot))
   },
-  captureComplete: (imageData: string) => {
-    ipcRenderer.send('capture-complete', imageData)
+  captureComplete: (data: string | { imageData: string; screenBounds?: { x: number; y: number; width: number; height: number } }) => {
+    ipcRenderer.send('capture-complete', data)
   },
   captureCancel: () => {
     ipcRenderer.send('capture-cancel')
@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onOcrStart: (callback: (imageData: string) => void) => {
     ipcRenderer.on('ocr-start', (_event, imageData) => callback(imageData))
   },
-  onOcrResult: (callback: (result: { image: string; text: string; confidence: number }) => void) => {
+  onOcrResult: (callback: (result: { image: string; text: string; confidence: number; method?: string; methodDisplay?: string }) => void) => {
     ipcRenderer.on('ocr-result', (_event, result) => callback(result))
   },
   onOcrError: (callback: (error: { message: string }) => void) => {
@@ -82,10 +82,10 @@ declare global {
   interface Window {
     electronAPI: {
       onScreenshotReady: (callback: (screenshot: string) => void) => void
-      captureComplete: (imageData: string) => void
+      captureComplete: (data: string | { imageData: string; screenBounds?: { x: number; y: number; width: number; height: number } }) => void
       captureCancel: () => void
       onOcrStart: (callback: (imageData: string) => void) => void
-      onOcrResult: (callback: (result: { image: string; text: string; confidence: number }) => void) => void
+      onOcrResult: (callback: (result: { image: string; text: string; confidence: number; method?: string; methodDisplay?: string }) => void) => void
       onOcrError: (callback: (error: { message: string }) => void) => void
       onShowResult: (callback: (result: { image: string; text: string }) => void) => void
       onShowSettings: (callback: () => void) => void

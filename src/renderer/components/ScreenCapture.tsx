@@ -1,9 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import '../styles/ScreenCapture.css'
 
+interface ScreenBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 interface ScreenCaptureProps {
   screenshot: string
-  onComplete: (imageData: string) => void
+  onComplete: (imageData: string, screenBounds: ScreenBounds) => void
   onCancel: () => void
 }
 
@@ -152,26 +159,34 @@ export function ScreenCapture({ screenshot, onComplete, onCancel }: ScreenCaptur
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const x = Math.min(selection.startX, selection.endX)
-    const y = Math.min(selection.startY, selection.endY)
-    const width = Math.abs(selection.endX - selection.startX)
-    const height = Math.abs(selection.endY - selection.startY)
+    // 螢幕座標（用於 UI Automation）
+    const screenX = Math.min(selection.startX, selection.endX)
+    const screenY = Math.min(selection.startY, selection.endY)
+    const screenWidth = Math.abs(selection.endX - selection.startX)
+    const screenHeight = Math.abs(selection.endY - selection.startY)
 
     // Scale coordinates to original image size
     const scaleX = img.width / window.innerWidth
     const scaleY = img.height / window.innerHeight
 
-    canvas.width = width * scaleX
-    canvas.height = height * scaleY
+    canvas.width = screenWidth * scaleX
+    canvas.height = screenHeight * scaleY
 
     ctx.drawImage(
       img,
-      x * scaleX, y * scaleY, width * scaleX, height * scaleY,
+      screenX * scaleX, screenY * scaleY, screenWidth * scaleX, screenHeight * scaleY,
       0, 0, canvas.width, canvas.height
     )
 
     const imageData = canvas.toDataURL('image/png')
-    onComplete(imageData)
+
+    // 傳遞圖片資料和螢幕座標
+    onComplete(imageData, {
+      x: Math.round(screenX),
+      y: Math.round(screenY),
+      width: Math.round(screenWidth),
+      height: Math.round(screenHeight)
+    })
   }
 
   // Handle keyboard events
