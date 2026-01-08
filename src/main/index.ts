@@ -290,11 +290,13 @@ async function processCapturedRegion(
       text: result.text
     }
 
-    // Add to history
-    addToHistory({
-      image: imageData,
-      text: result.text
-    })
+    // 加入歷史紀錄（品質過濾：信心度 >= 50% 且文字長度 >= 3）
+    if (result.text && result.text.trim().length >= 3 && result.confidence >= 50) {
+      addToHistory({
+        image: imageData,
+        text: result.text
+      })
+    }
 
     // Send result to renderer (包含擷取方法資訊)
     mainWindow?.webContents.send('ocr-result', {
@@ -431,7 +433,17 @@ function setupIpcHandlers() {
   // Gemini AI OCR (手動觸發)
   ipcMain.handle('gemini-ocr', async (_event, imageData: string) => {
     const { extractWithGemini } = await import('./textExtractor')
-    return extractWithGemini(imageData)
+    const result = await extractWithGemini(imageData)
+
+    // 加入歷史紀錄（品質過濾：文字長度 >= 3）
+    if (result.text && result.text.trim().length >= 3) {
+      addToHistory({
+        image: imageData,
+        text: result.text
+      })
+    }
+
+    return result
   })
 
   // 檢查 Gemini 是否可用
