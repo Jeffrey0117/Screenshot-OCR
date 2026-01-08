@@ -133,6 +133,27 @@ function App() {
     }
   }
 
+  const handleGeminiOcr = async (imageData: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const geminiResult = await window.electronAPI.geminiOcr(imageData)
+      if (geminiResult.text) {
+        setResult({
+          image: imageData,
+          text: geminiResult.text,
+          confidence: geminiResult.confidence
+        })
+      } else {
+        setError('AI 辨識失敗，請確認已設定 API Key')
+      }
+    } catch (err) {
+      setError('AI 辨識發生錯誤')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Render based on view
   if (view === 'capture' && screenshot) {
     return (
@@ -177,6 +198,7 @@ function App() {
       onOpenHistory={() => setView('history')}
       onRecrop={handleRecrop}
       onTextEdit={handleTextEdit}
+      onGeminiOcr={handleGeminiOcr}
     />
   )
 }

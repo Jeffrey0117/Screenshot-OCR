@@ -66,6 +66,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('clear-history')
   },
 
+  // Gemini AI OCR
+  geminiOcr: (imageData: string) => {
+    return ipcRenderer.invoke('gemini-ocr', imageData)
+  },
+  isGeminiAvailable: () => {
+    return ipcRenderer.invoke('is-gemini-available')
+  },
+
   // Cleanup listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('screenshot-ready')
@@ -99,6 +107,8 @@ declare global {
       getHistory: () => Promise<Array<{ id: string; image: string; text: string; timestamp: number }>>
       deleteHistoryItem: (id: string) => Promise<Array<{ id: string; image: string; text: string; timestamp: number }>>
       clearHistory: () => Promise<Array<never>>
+      geminiOcr: (imageData: string) => Promise<{ text: string; method: string; confidence: number }>
+      isGeminiAvailable: () => Promise<boolean>
       removeAllListeners: () => void
     }
   }

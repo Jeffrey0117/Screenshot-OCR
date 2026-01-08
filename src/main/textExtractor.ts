@@ -1,12 +1,15 @@
 /**
  * 統一文字擷取模組
- * 優先順序：UI Automation → Tesseract OCR → (未來: AI Vision)
+ * 預設順序：UI Automation → PaddleOCR → Tesseract OCR
+ * Gemini AI 需要手動觸發（useGemini: true）
  */
 
 import { getTextFromRect, UIAutomationResult } from './uiAutomation'
 import { recognizeImage, OcrResult } from './ocr'
+import { recognizeWithPaddleOcr, PaddleOcrResult } from './paddleOcr'
+import { recognizeWithGemini, isGeminiAvailable, GeminiOcrResult } from './geminiOcr'
 
-export type ExtractionMethod = 'ui-automation' | 'tesseract' | 'ai-vision'
+export type ExtractionMethod = 'ui-automation' | 'gemini-ai' | 'paddle-ocr' | 'tesseract'
 
 export interface ExtractionResult {
   text: string
@@ -15,6 +18,8 @@ export interface ExtractionResult {
   details?: {
     uiAutomation?: UIAutomationResult
     ocr?: OcrResult
+    paddleOcr?: PaddleOcrResult
+    geminiOcr?: GeminiOcrResult
   }
 }
 
@@ -32,6 +37,8 @@ export interface ExtractionOptions {
   tryUIAutomation?: boolean
   /** 是否跳過 OCR（只用 UI Automation） */
   skipOCR?: boolean
+  /** 是否使用 Gemini AI（需手動觸發） */
+  useGemini?: boolean
 }
 
 /**
@@ -42,7 +49,8 @@ export async function extractText(options: ExtractionOptions): Promise<Extractio
     imageData,
     screenBounds,
     tryUIAutomation = true,
-    skipOCR = false
+    skipOCR = false,
+    useGemini = false
   } = options
 
   // 防禦性檢查：確保 imageData 是字串
@@ -79,7 +87,58 @@ export async function extractText(options: ExtractionOptions): Promise<Extractio
     }
   }
 
-  // 2. Fallback 到 Tesseract OCR
+  // 2. 嘗試 Gemini AI（只有手動觸發時才用）
+  if (!skipOCR && useGemini && isGeminiAvailable()) {
+    console.log('Trying Gemini AI Vision...')
+
+    try {
+      const geminiResult = await recognizeWithGemini(imageData)
+
+      if (geminiResult.success && geminiResult.text.length > 0) {
+        console.log(`Gemini AI succeeded: "${geminiResult.text.substring(0, 50)}..."`)
+        return {
+          text: geminiResult.text,
+          method: 'gemini-ai',
+          confidence: 98, // AI 辨識信心度高
+          details: { geminiOcr: geminiResult }
+        }
+      }
+
+      console.log('Gemini AI returned no text, falling back to PaddleOCR')
+    } catch (error) {
+      console.log('Gemini AI failed:', error)
+    }
+  }
+
+  // 3. 嘗試 PaddleOCR（中文效果比 Tesseract 好）
+  if (!skipOCR) {
+    console.log('Trying PaddleOCR...')
+
+    try {
+      const paddleResult = await recognizeWithPaddleOcr(imageData)
+
+      if (paddleResult.success && paddleResult.text.length > 0) {
+        // 計算平均信心度
+        const avgConfidence = paddleResult.lines.length > 0
+          ? paddleResult.lines.reduce((sum, l) => sum + l.confidence, 0) / paddleResult.lines.length * 100
+          : 90
+
+        console.log(`PaddleOCR succeeded: "${paddleResult.text.substring(0, 50)}..."`)
+        return {
+          text: paddleResult.text,
+          method: 'paddle-ocr',
+          confidence: avgConfidence,
+          details: { paddleOcr: paddleResult }
+        }
+      }
+
+      console.log('PaddleOCR returned no text, falling back to Tesseract')
+    } catch (error) {
+      console.log('PaddleOCR failed:', error)
+    }
+  }
+
+  // 3. Fallback 到 Tesseract OCR
   if (!skipOCR) {
     console.log('Using Tesseract OCR...')
 
@@ -111,16 +170,51 @@ export async function extractText(options: ExtractionOptions): Promise<Extractio
 }
 
 /**
+ * 使用 Gemini AI 重新辨識（手動觸發）
+ */
+export async function extractWithGemini(imageData: string): Promise<ExtractionResult> {
+  if (!isGeminiAvailable()) {
+    return {
+      text: '',
+      method: 'gemini-ai',
+      confidence: 0,
+      details: { geminiOcr: { success: false, text: '', error: 'Gemini API key not configured' } }
+    }
+  }
+
+  console.log('Manual Gemini AI Vision...')
+  const geminiResult = await recognizeWithGemini(imageData)
+
+  if (geminiResult.success && geminiResult.text.length > 0) {
+    return {
+      text: geminiResult.text,
+      method: 'gemini-ai',
+      confidence: 98,
+      details: { geminiOcr: geminiResult }
+    }
+  }
+
+  return {
+    text: '',
+    method: 'gemini-ai',
+    confidence: 0,
+    details: { geminiOcr: geminiResult }
+  }
+}
+
+/**
  * 取得方法的顯示名稱
  */
 export function getMethodDisplayName(method: ExtractionMethod): string {
   switch (method) {
     case 'ui-automation':
       return '直接讀取'
+    case 'gemini-ai':
+      return 'Gemini AI'
+    case 'paddle-ocr':
+      return 'PaddleOCR'
     case 'tesseract':
-      return 'OCR 辨識'
-    case 'ai-vision':
-      return 'AI 辨識'
+      return 'Tesseract OCR'
     default:
       return '未知'
   }
@@ -133,10 +227,12 @@ export function formatConfidence(method: ExtractionMethod, confidence: number): 
   switch (method) {
     case 'ui-automation':
       return '✓ 直接讀取 (100%)'
+    case 'gemini-ai':
+      return `Gemini AI (${Math.round(confidence)}%)`
+    case 'paddle-ocr':
+      return `PaddleOCR (${Math.round(confidence)}%)`
     case 'tesseract':
-      return `OCR 辨識 (${Math.round(confidence)}%)`
-    case 'ai-vision':
-      return `AI 辨識 (${Math.round(confidence)}%)`
+      return `Tesseract OCR (${Math.round(confidence)}%)`
     default:
       return `${Math.round(confidence)}%`
   }

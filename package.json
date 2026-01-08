@@ -11,6 +11,8 @@
   "author": "PasteV Team",
   "license": "MIT",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@gutenye/ocr-node": "^1.4.8",
     "electron-store": "^8.2.0",
     "jimp": "^1.6.0",
     "tesseract.js": "^5.1.1"

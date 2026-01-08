@@ -22,6 +22,7 @@ interface ResultPopupProps {
   onOpenHistory: () => void
   onRecrop?: (croppedImage: string) => void
   onTextEdit?: (newText: string) => void
+  onGeminiOcr?: (imageData: string) => void
 }
 
 export function ResultPopup({
@@ -36,7 +37,8 @@ export function ResultPopup({
   onOpenSettings,
   onOpenHistory,
   onRecrop,
-  onTextEdit
+  onTextEdit,
+  onGeminiOcr
 }: ResultPopupProps) {
   const [isPinned, setIsPinned] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -350,6 +352,16 @@ export function ResultPopup({
             >
               ✂️ 裁切
             </button>
+            {onGeminiOcr && (
+              <button
+                className="action-btn ai"
+                onClick={() => result?.image && onGeminiOcr(result.image)}
+                disabled={!result?.image || isLoading}
+                title="使用 AI 重新辨識"
+              >
+                🤖 AI
+              </button>
+            )}
             <button
               className="action-btn"
               onClick={handleSearch}

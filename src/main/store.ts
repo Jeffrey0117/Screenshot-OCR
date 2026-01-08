@@ -28,6 +28,9 @@ export interface AppSettings {
   preprocessEnabled: boolean
   preprocessAutoInvert: boolean
 
+  // AI Vision
+  geminiApiKey: string
+
   // Appearance
   theme: 'light' | 'dark' | 'system'
   resultPosition: 'mouse' | 'center' | 'remember'
@@ -51,6 +54,8 @@ const defaults: AppSettings = {
   ocrAccuracy: 'balanced',
   preprocessEnabled: true,
   preprocessAutoInvert: true,
+
+  geminiApiKey: '',
 
   theme: 'dark',
   resultPosition: 'center'

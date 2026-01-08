@@ -427,6 +427,18 @@ function setupIpcHandlers() {
     clearHistory()
     return []
   })
+
+  // Gemini AI OCR (手動觸發)
+  ipcMain.handle('gemini-ocr', async (_event, imageData: string) => {
+    const { extractWithGemini } = await import('./textExtractor')
+    return extractWithGemini(imageData)
+  })
+
+  // 檢查 Gemini 是否可用
+  ipcMain.handle('is-gemini-available', () => {
+    const { isGeminiAvailable } = require('./geminiOcr')
+    return isGeminiAvailable()
+  })
 }
 
 // App lifecycle
