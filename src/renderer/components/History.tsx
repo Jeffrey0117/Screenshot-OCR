@@ -91,9 +91,6 @@ export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }
                 className="history-item"
                 onClick={() => onSelectItem(item)}
               >
-                <div className="item-preview">
-                  <img src={item.image} alt="Screenshot" />
-                </div>
                 <div className="item-content">
                   <p className="item-text">{item.text || '(無文字)'}</p>
                   <span className="item-time">{formatTime(item.timestamp)}</span>
@@ -107,25 +104,11 @@ export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }
                     📋
                   </button>
                   <button
-                    className="action-btn"
-                    onClick={(e) => { e.stopPropagation(); onSearch(item.text) }}
-                    title="Google 搜尋"
-                  >
-                    🔍
-                  </button>
-                  <button
-                    className="action-btn"
-                    onClick={(e) => { e.stopPropagation(); onInstagram(item.text) }}
-                    title="IG"
-                  >
-                    📷
-                  </button>
-                  <button
                     className="action-btn delete"
                     onClick={(e) => handleDelete(item.id, e)}
                     title="刪除"
                   >
-                    🗑️
+                    ✕
                   </button>
                 </div>
               </div>

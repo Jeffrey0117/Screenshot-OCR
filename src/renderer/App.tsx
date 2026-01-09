@@ -114,6 +114,10 @@ function App() {
     window.electronAPI.togglePin()
   }
 
+  const handleCapture = () => {
+    window.electronAPI.startCapture()
+  }
+
   const handleSettingsClose = () => {
     setView('result')
   }
@@ -196,6 +200,7 @@ function App() {
       onTogglePin={handleTogglePin}
       onOpenSettings={() => setView('settings')}
       onOpenHistory={() => setView('history')}
+      onCapture={handleCapture}
       onRecrop={handleRecrop}
       onTextEdit={handleTextEdit}
       onGeminiOcr={handleGeminiOcr}

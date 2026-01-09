@@ -41,7 +41,7 @@ function createMainWindow() {
     frame: false,
     resizable: true,
     skipTaskbar: true,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     transparent: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -102,6 +102,14 @@ function createCaptureWindow() {
 
   captureWindow.on('closed', () => {
     captureWindow = null
+  })
+
+  // 視窗失去焦點時自動關閉
+  captureWindow.on('blur', () => {
+    if (captureWindow?.isVisible()) {
+      console.log('Capture window lost focus, hiding...')
+      captureWindow.hide()
+    }
   })
 }
 
@@ -229,6 +237,15 @@ async function startCapture() {
 
   captureWindow?.show()
   captureWindow?.focus()
+
+  // 註冊臨時 Escape 快捷鍵來關閉截圖視窗
+  globalShortcut.register('Escape', () => {
+    if (captureWindow?.isVisible()) {
+      console.log('Escape pressed, hiding capture window...')
+      captureWindow.hide()
+      globalShortcut.unregister('Escape')
+    }
+  })
 }
 
 /**
@@ -290,8 +307,10 @@ async function processCapturedRegion(
       text: result.text
     }
 
-    // 加入歷史紀錄（品質過濾：信心度 >= 50% 且文字長度 >= 3）
-    if (result.text && result.text.trim().length >= 3 && result.confidence >= 50) {
+    // 加入歷史紀錄（品質過濾：信心度 >= 70% 且文字長度 >= 2，排除純亂碼）
+    const cleanText = result.text?.trim() || ''
+    const hasValidChars = /[\u4e00-\u9fff\u3400-\u4dbfa-zA-Z0-9]/.test(cleanText) // 包含中文、英文或數字
+    if (cleanText.length >= 2 && result.confidence >= 70 && hasValidChars) {
       addToHistory({
         image: imageData,
         text: result.text
@@ -354,6 +373,7 @@ function setupIpcHandlers() {
     screenBounds?: { x: number; y: number; width: number; height: number }
   } | string) => {
     captureWindow?.hide()
+    globalShortcut.unregister('Escape')
 
     // Debug log
     console.log('capture-complete received:', typeof data, typeof data === 'object' ? Object.keys(data) : data?.substring?.(0, 50))
@@ -372,9 +392,15 @@ function setupIpcHandlers() {
   // Capture cancelled
   ipcMain.on('capture-cancel', () => {
     captureWindow?.hide()
+    globalShortcut.unregister('Escape')
   })
 
   // Copy text
+  // Start capture (從 UI 按鈕觸發)
+  ipcMain.on('start-capture', () => {
+    startCapture()
+  })
+
   ipcMain.on('copy-text', (_event, text: string) => {
     clipboard.writeText(text)
   })
@@ -453,31 +479,50 @@ function setupIpcHandlers() {
   })
 }
 
-// App lifecycle
-app.whenReady().then(async () => {
-  // Initialize store
-  createStore()
+// 單例鎖 - 只允許一個實例運行
+const gotTheLock = app.requestSingleInstanceLock()
 
-  // Initialize OCR
-  const settings = getSettings()
-  await initOcr(settings.ocrLanguages)
-
-  // Create windows
-  createMainWindow()
-  createTray()
-
-  // Register shortcuts
-  registerShortcuts()
-
-  // Setup IPC
-  setupIpcHandlers()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow()
+if (!gotTheLock) {
+  // 已經有另一個實例在運行，退出
+  console.log('Another instance is already running. Exiting...')
+  app.quit()
+} else {
+  // 當第二個實例嘗試啟動時，聚焦到現有視窗
+  app.on('second-instance', () => {
+    console.log('Second instance detected, focusing existing window...')
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
     }
   })
-})
+
+  // App lifecycle
+  app.whenReady().then(async () => {
+    // Initialize store
+    createStore()
+
+    // Initialize OCR
+    const settings = getSettings()
+    await initOcr(settings.ocrLanguages)
+
+    // Create windows
+    createMainWindow()
+    createTray()
+
+    // Register shortcuts
+    registerShortcuts()
+
+    // Setup IPC
+    setupIpcHandlers()
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createMainWindow()
+      }
+    })
+  })
+}
 
 app.on('window-all-closed', () => {
   // Don't quit on window close, keep tray running

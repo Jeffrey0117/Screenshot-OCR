@@ -20,6 +20,7 @@ interface ResultPopupProps {
   onTogglePin: () => void
   onOpenSettings: () => void
   onOpenHistory: () => void
+  onCapture: () => void
   onRecrop?: (croppedImage: string) => void
   onTextEdit?: (newText: string) => void
   onGeminiOcr?: (imageData: string) => void
@@ -36,6 +37,7 @@ export function ResultPopup({
   onTogglePin,
   onOpenSettings,
   onOpenHistory,
+  onCapture,
   onRecrop,
   onTextEdit,
   onGeminiOcr
@@ -201,25 +203,32 @@ export function ResultPopup({
       </div>
       <div className="popup-controls">
         <button
+          className="control-btn capture"
+          onClick={onCapture}
+          title="截圖"
+        >
+          📷 截圖
+        </button>
+        <button
           className={`control-btn ${isPinned ? 'active' : ''}`}
           onClick={handleTogglePin}
           title="釘選視窗"
         >
-          📌
+          📌 置頂
         </button>
         <button
           className="control-btn"
           onClick={onOpenHistory}
           title="歷史紀錄"
         >
-          🕒
+          📜 歷史
         </button>
         <button
           className="control-btn"
           onClick={onOpenSettings}
           title="設定"
         >
-          ⚙️
+          ⚙️ 設定
         </button>
         <button
           className="control-btn close"
@@ -367,14 +376,14 @@ export function ResultPopup({
               onClick={handleSearch}
               disabled={!result?.text}
             >
-              🔍
+              🔍 搜尋
             </button>
             <button
               className="action-btn instagram"
               onClick={() => onInstagram(selectedText || result?.text || '')}
               disabled={!result?.text}
             >
-              📷
+              📷 IG
             </button>
           </>
         )}

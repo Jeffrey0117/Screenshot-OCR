@@ -11,22 +11,25 @@ export interface PreprocessOptions {
   contrast?: number
   threshold?: number
   sharpen?: boolean
+  denoise?: boolean
 }
 
 /**
  * 預處理圖片以提升 OCR 辨識率
+ * 針對中文藝術字體優化
  */
 export async function preprocessImage(
   base64Image: string,
   options?: PreprocessOptions
 ): Promise<string> {
   const opts = {
-    scale: options?.scale ?? 3,
+    scale: options?.scale ?? 2,  // 降低放大倍數，避免模糊
     grayscale: options?.grayscale ?? true,
     invert: options?.invert ?? 'auto' as boolean | 'auto',
-    contrast: options?.contrast ?? 2.0,
-    threshold: options?.threshold ?? 128,
+    contrast: options?.contrast ?? 1.5,  // 降低對比度增強，保留更多細節
+    threshold: options?.threshold ?? 0,  // 預設不做二值化，保留灰階
     sharpen: options?.sharpen ?? true,
+    denoise: options?.denoise ?? true,
   }
 
   // 移除 data URI 前綴
@@ -40,56 +43,86 @@ export async function preprocessImage(
 
   const originalSize = { w: image.width, h: image.height }
 
-  // 放大圖片
+  // 放大圖片（使用較佳的插值方法）
   if (opts.scale !== 1) {
-    const newWidth = image.width * opts.scale
-    const newHeight = image.height * opts.scale
+    const newWidth = Math.round(image.width * opts.scale)
+    const newHeight = Math.round(image.height * opts.scale)
     image = image.resize({ w: newWidth, h: newHeight })
   }
 
-  // 過濾彩色像素（如游標），只保留接近灰階的像素
-  // 這可以去除綠色游標等干擾
+  // 計算原始圖片特徵
+  let hasColoredText = false
+  let colorVariance = 0
+  const colorSamples: number[] = []
+
   image.scan((_x: number, _y: number, idx: number) => {
     const r = image.bitmap.data[idx + 0]
     const g = image.bitmap.data[idx + 1]
     const b = image.bitmap.data[idx + 2]
 
-    // 計算顏色的飽和度 - 如果顏色太鮮豔（非灰階），視為雜訊
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
     const saturation = max === 0 ? 0 : (max - min) / max
 
-    // 如果飽和度高（彩色），將其變為白色（背景）
-    if (saturation > 0.3) {
-      image.bitmap.data[idx + 0] = 255
-      image.bitmap.data[idx + 1] = 255
-      image.bitmap.data[idx + 2] = 255
+    // 記錄飽和度高的像素數量
+    if (saturation > 0.4 && max > 50) {
+      colorSamples.push(saturation)
     }
   })
+
+  // 如果彩色像素佔比高，可能是藝術字，不要過濾顏色
+  hasColoredText = colorSamples.length > (image.width * image.height * 0.05)
+  colorVariance = colorSamples.length
+
+  console.log(`Preprocess: coloredPixels=${colorVariance}, hasColoredText=${hasColoredText}`)
+
+  // 只過濾明顯的游標/UI 元素（高飽和度的亮色），保留藝術字
+  if (!hasColoredText) {
+    image.scan((_x: number, _y: number, idx: number) => {
+      const r = image.bitmap.data[idx + 0]
+      const g = image.bitmap.data[idx + 1]
+      const b = image.bitmap.data[idx + 2]
+
+      const max = Math.max(r, g, b)
+      const min = Math.min(r, g, b)
+      const saturation = max === 0 ? 0 : (max - min) / max
+      const brightness = (r + g + b) / 3
+
+      // 只過濾高飽和度且亮的像素（如綠色游標）
+      if (saturation > 0.6 && brightness > 150) {
+        image.bitmap.data[idx + 0] = 255
+        image.bitmap.data[idx + 1] = 255
+        image.bitmap.data[idx + 2] = 255
+      }
+    })
+  }
 
   // 轉灰階
   if (opts.grayscale) {
     image = image.greyscale()
   }
 
-  // 計算平均亮度
+  // 計算平均亮度和對比度
   let totalBrightness = 0
+  let minBrightness = 255
+  let maxBrightness = 0
   const pixelCount = image.width * image.height
 
   image.scan((_x: number, _y: number, idx: number) => {
-    const r = image.bitmap.data[idx + 0]
-    const g = image.bitmap.data[idx + 1]
-    const b = image.bitmap.data[idx + 2]
-    totalBrightness += 0.299 * r + 0.587 * g + 0.114 * b
+    const gray = image.bitmap.data[idx]
+    totalBrightness += gray
+    minBrightness = Math.min(minBrightness, gray)
+    maxBrightness = Math.max(maxBrightness, gray)
   })
 
   const avgBrightness = totalBrightness / pixelCount
+  const contrastRange = maxBrightness - minBrightness
 
   // 自動偵測深色背景並反轉
   let shouldInvert = false
   if (opts.invert === 'auto') {
     shouldInvert = avgBrightness < 128
-    console.log(`Preprocess: avg brightness=${avgBrightness.toFixed(1)}, invert=${shouldInvert}`)
+    console.log(`Preprocess: avgBrightness=${avgBrightness.toFixed(1)}, contrast=${contrastRange}, invert=${shouldInvert}`)
   } else {
     shouldInvert = opts.invert
   }
@@ -98,58 +131,117 @@ export async function preprocessImage(
     image = image.invert()
   }
 
-  // 增強對比度
+  // 增強對比度（根據原始對比度調整）
   if (opts.contrast !== 1) {
-    const contrastValue = Math.min(1, Math.max(-1, opts.contrast - 1))
+    // 如果原始對比度已經夠高，減少增強
+    const adjustedContrast = contrastRange > 200 ? opts.contrast * 0.5 : opts.contrast
+    const contrastValue = Math.min(1, Math.max(-1, adjustedContrast - 1))
     image = image.contrast(contrastValue)
   }
 
-  // 銳化處理 - 使用卷積核強化邊緣，有助於辨識細線如底線
+  // 去噪處理 - 使用中值濾波概念（簡化版）
+  if (opts.denoise) {
+    // 找出孤立的噪點並移除
+    const width = image.width
+    const height = image.height
+    const data = image.bitmap.data
+
+    // 複製一份用於判斷
+    const originalData = Buffer.from(data)
+
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const idx = (y * width + x) * 4
+        const current = originalData[idx]
+
+        // 收集周圍 8 個像素
+        const neighbors = [
+          originalData[((y - 1) * width + (x - 1)) * 4],
+          originalData[((y - 1) * width + x) * 4],
+          originalData[((y - 1) * width + (x + 1)) * 4],
+          originalData[(y * width + (x - 1)) * 4],
+          originalData[(y * width + (x + 1)) * 4],
+          originalData[((y + 1) * width + (x - 1)) * 4],
+          originalData[((y + 1) * width + x) * 4],
+          originalData[((y + 1) * width + (x + 1)) * 4],
+        ]
+
+        const avgNeighbor = neighbors.reduce((a, b) => a + b, 0) / 8
+
+        // 如果當前像素與周圍差異太大，可能是噪點
+        if (Math.abs(current - avgNeighbor) > 80) {
+          // 用周圍平均值替代
+          data[idx] = Math.round(avgNeighbor)
+          data[idx + 1] = Math.round(avgNeighbor)
+          data[idx + 2] = Math.round(avgNeighbor)
+        }
+      }
+    }
+  }
+
+  // 銳化處理 - 強化文字邊緣
   if (opts.sharpen) {
-    // Jimp 的 convolute 方法可能存在，嘗試使用
-    // 如果不存在則手動處理
     try {
-      // 銳化卷積核 (3x3)
+      // 較溫和的銳化卷積核
       const sharpenKernel = [
-        [0, -1, 0],
-        [-1, 5, -1],
-        [0, -1, 0]
+        [0, -0.5, 0],
+        [-0.5, 3, -0.5],
+        [0, -0.5, 0]
       ]
       if (typeof image.convolute === 'function') {
         image = image.convolute(sharpenKernel)
-        console.log('Preprocess: Applied sharpening')
+        console.log('Preprocess: Applied mild sharpening')
       }
-    } catch (e) {
+    } catch {
       console.log('Preprocess: Sharpening not available')
     }
   }
 
-  // 二值化處理 - 將圖片轉為純黑白，消除背景雜訊
-  // 使用自適應閾值：根據圖片亮度決定閾值
+  // 二值化處理 - 只在明確需要時使用
   if (opts.threshold > 0) {
-    // 計算當前圖片的亮度分佈來決定最佳閾值
-    let brightPixels = 0
-    let darkPixels = 0
+    // 使用 Otsu's method 概念找最佳閾值
+    const histogram = new Array(256).fill(0)
 
     image.scan((_x: number, _y: number, idx: number) => {
       const gray = image.bitmap.data[idx]
-      if (gray > 200) brightPixels++
-      else if (gray < 50) darkPixels++
+      histogram[gray]++
     })
 
-    // 如果大部分是亮色（反轉後的白底），使用較高閾值保留文字
-    const totalPixels = image.width * image.height
-    const brightRatio = brightPixels / totalPixels
+    // 找雙峰之間的最佳閾值
+    let bestThreshold = 128
+    let maxVariance = 0
+    const total = image.width * image.height
 
-    // 動態調整閾值：白底黑字用較低閾值，保留更多細節
-    const adaptiveThreshold = brightRatio > 0.5 ? 180 : 128
+    for (let t = 1; t < 255; t++) {
+      let w0 = 0, w1 = 0, sum0 = 0, sum1 = 0
 
-    console.log(`Preprocess: bright ratio=${(brightRatio * 100).toFixed(1)}%, threshold=${adaptiveThreshold}`)
+      for (let i = 0; i < t; i++) {
+        w0 += histogram[i]
+        sum0 += i * histogram[i]
+      }
+      for (let i = t; i < 256; i++) {
+        w1 += histogram[i]
+        sum1 += i * histogram[i]
+      }
 
-    // 手動二值化
+      if (w0 === 0 || w1 === 0) continue
+
+      const mean0 = sum0 / w0
+      const mean1 = sum1 / w1
+      const variance = (w0 / total) * (w1 / total) * Math.pow(mean0 - mean1, 2)
+
+      if (variance > maxVariance) {
+        maxVariance = variance
+        bestThreshold = t
+      }
+    }
+
+    console.log(`Preprocess: Otsu threshold=${bestThreshold}`)
+
+    // 應用二值化
     image.scan((_x: number, _y: number, idx: number) => {
       const gray = image.bitmap.data[idx]
-      const newValue = gray > adaptiveThreshold ? 255 : 0
+      const newValue = gray > bestThreshold ? 255 : 0
       image.bitmap.data[idx + 0] = newValue
       image.bitmap.data[idx + 1] = newValue
       image.bitmap.data[idx + 2] = newValue

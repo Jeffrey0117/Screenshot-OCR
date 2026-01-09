@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Actions
+  startCapture: () => {
+    ipcRenderer.send('start-capture')
+  },
   copyText: (text: string) => {
     ipcRenderer.send('copy-text', text)
   },
@@ -97,6 +100,7 @@ declare global {
       onOcrError: (callback: (error: { message: string }) => void) => void
       onShowResult: (callback: (result: { image: string; text: string }) => void) => void
       onShowSettings: (callback: () => void) => void
+      startCapture: () => void
       copyText: (text: string) => void
       googleSearch: (text: string) => void
       instagramSearch: (text: string) => void
