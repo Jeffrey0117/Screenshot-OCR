@@ -24,6 +24,10 @@ npm-debug.log*
 .env
 .env.local
 
+# Temp files
+tmpclaude-*
+nul
+
 # Tesseract language files (download separately)
 assets/tessdata/*.traineddata
 *.traineddata

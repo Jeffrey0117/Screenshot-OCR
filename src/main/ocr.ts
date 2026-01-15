@@ -137,6 +137,16 @@ export async function terminateOcr(): Promise<void> {
 }
 
 /**
+ * Cancel ongoing OCR operation
+ * Note: Tesseract.js doesn't have a direct cancel, so we terminate and reinit
+ */
+export async function cancelOcr(): Promise<void> {
+  console.log('Cancelling OCR...')
+  await terminateOcr()
+  // Worker will be reinitialized on next recognition
+}
+
+/**
  * Check if two arrays are equal
  */
 function arraysEqual(a: string[], b: string[]): boolean {

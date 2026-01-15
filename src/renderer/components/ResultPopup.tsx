@@ -21,6 +21,7 @@ interface ResultPopupProps {
   onOpenSettings: () => void
   onOpenHistory: () => void
   onCapture: () => void
+  onCancelOcr?: () => void
   onRecrop?: (croppedImage: string) => void
   onTextEdit?: (newText: string) => void
   onGeminiOcr?: (imageData: string) => void
@@ -38,6 +39,7 @@ export function ResultPopup({
   onOpenSettings,
   onOpenHistory,
   onCapture,
+  onCancelOcr,
   onRecrop,
   onTextEdit,
   onGeminiOcr
@@ -46,6 +48,7 @@ export function ResultPopup({
   const [copied, setCopied] = useState(false)
   const [selectedText, setSelectedText] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [isTextExpanded, setIsTextExpanded] = useState(false)
   const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null)
   const [cropEnd, setCropEnd] = useState<{ x: number; y: number } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -287,6 +290,13 @@ export function ResultPopup({
           <div className="result-loading">
             <div className="spinner"></div>
             <span>辨識中...</span>
+            {onCancelOcr && (
+              <div className="loading-actions">
+                <button className="cancel-btn" onClick={onCancelOcr}>
+                  取消
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -299,22 +309,32 @@ export function ResultPopup({
 
         {/* Text result - editable */}
         {!isLoading && !error && result && (
-          <div
-            className="result-text"
-            ref={textRef}
-            contentEditable
-            suppressContentEditableWarning
-            spellCheck={false}
-            onBlur={(e) => {
-              // 當用戶編輯完成後，更新結果
-              const newText = e.currentTarget.textContent || ''
-              if (newText !== result.text && onTextEdit) {
-                onTextEdit(newText)
-              }
-            }}
-            data-placeholder="點擊此處輸入或修正文字..."
-          >
-            {result.text || ''}
+          <div className="result-text-wrapper">
+            <div
+              className={`result-text ${isTextExpanded ? 'expanded' : ''}`}
+              ref={textRef}
+              contentEditable
+              suppressContentEditableWarning
+              spellCheck={false}
+              onBlur={(e) => {
+                // 當用戶編輯完成後，更新結果
+                const newText = e.currentTarget.textContent || ''
+                if (newText !== result.text && onTextEdit) {
+                  onTextEdit(newText)
+                }
+              }}
+              data-placeholder="點擊此處輸入或修正文字..."
+            >
+              {result.text || ''}
+            </div>
+            {result.text && result.text.length > 100 && (
+              <button
+                className="expand-btn"
+                onClick={() => setIsTextExpanded(!isTextExpanded)}
+              >
+                {isTextExpanded ? '▲ 收合' : '▼ 展開更多'}
+              </button>
+            )}
           </div>
         )}
 

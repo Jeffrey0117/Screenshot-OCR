@@ -177,6 +177,14 @@
 }
 
 /* Text result - editable */
+.result-text-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
 .result-text {
   flex: 1;
   padding: 0.75rem;
@@ -190,8 +198,17 @@
   line-height: 1.6;
   outline: none;
   border: 1px solid transparent;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, max-height 0.3s;
   min-height: 60px;
+  max-height: 120px;
+}
+
+.result-text.expanded {
+  max-height: 300px;
+}
+
+.result-text.full-expanded {
+  max-height: none;
 }
 
 .result-text:focus {
@@ -213,12 +230,54 @@
   color: var(--text-muted);
 }
 
+/* Expand button */
+.expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-top: 0.25rem;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.expand-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
 /* Confidence */
 .result-confidence {
   margin-top: 0.5rem;
   font-size: 12px;
   color: var(--text-muted);
   text-align: right;
+}
+
+/* Loading with cancel */
+.loading-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cancel-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.cancel-btn:hover {
+  background: var(--error);
+  color: white;
 }
 
 /* Actions */

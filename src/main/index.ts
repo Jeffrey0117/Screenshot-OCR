@@ -13,7 +13,7 @@ import {
 } from 'electron'
 import path from 'path'
 import { createStore, getSettings, updateSettings, addToHistory, getHistory, deleteHistoryItem, clearHistory } from './store'
-import { initOcr, terminateOcr } from './ocr'
+import { initOcr, terminateOcr, cancelOcr } from './ocr'
 import { extractText, formatConfidence } from './textExtractor'
 
 
@@ -24,11 +24,20 @@ let lastResult: { image: string; text: string } | null = null
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
-// Renderer URL - electron-vite uses 5173 by default, falls back to other ports if busy
-const DEV_SERVER_PORT = process.env.DEV_SERVER_PORT || '5173'
-const RENDERER_URL = isDev
-  ? `http://localhost:${DEV_SERVER_PORT}`
-  : `file://${path.join(__dirname, '../dist/index.html')}`
+// Renderer URL - electron-vite provides VITE_DEV_SERVER_URL automatically
+// 打包後 __dirname 是 dist-electron/main/，需要用 app.getAppPath() 找到正確的 dist
+function getRendererUrl(): string {
+  if (process.env.VITE_DEV_SERVER_URL) {
+    return process.env.VITE_DEV_SERVER_URL
+  }
+  if (isDev) {
+    return 'http://localhost:5173'
+  }
+  // 打包後使用 app.getAppPath() 找到 asar 根目錄
+  return `file://${path.join(app.getAppPath(), 'dist/index.html')}`
+}
+
+const RENDERER_URL = getRendererUrl()
 
 /**
  * Create the main result window
@@ -421,6 +430,13 @@ function setupIpcHandlers() {
   // Close result window
   ipcMain.on('close-result', () => {
     mainWindow?.hide()
+  })
+
+  // Cancel OCR
+  ipcMain.on('cancel-ocr', () => {
+    console.log('Cancel OCR requested')
+    cancelOcr()
+    mainWindow?.webContents.send('ocr-cancelled')
   })
 
   // Toggle pin

@@ -34,6 +34,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   startCapture: () => {
     ipcRenderer.send('start-capture')
   },
+  cancelOcr: () => {
+    ipcRenderer.send('cancel-ocr')
+  },
+  onOcrCancelled: (callback: () => void) => {
+    ipcRenderer.on('ocr-cancelled', () => callback())
+  },
   copyText: (text: string) => {
     ipcRenderer.send('copy-text', text)
   },
@@ -83,6 +89,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('ocr-start')
     ipcRenderer.removeAllListeners('ocr-result')
     ipcRenderer.removeAllListeners('ocr-error')
+    ipcRenderer.removeAllListeners('ocr-cancelled')
     ipcRenderer.removeAllListeners('show-result')
     ipcRenderer.removeAllListeners('show-settings')
   }
@@ -101,6 +108,8 @@ declare global {
       onShowResult: (callback: (result: { image: string; text: string }) => void) => void
       onShowSettings: (callback: () => void) => void
       startCapture: () => void
+      cancelOcr: () => void
+      onOcrCancelled: (callback: () => void) => void
       copyText: (text: string) => void
       googleSearch: (text: string) => void
       instagramSearch: (text: string) => void

@@ -64,6 +64,15 @@ function App() {
       setError(err.message)
     })
 
+    // Listen for OCR cancelled
+    window.electronAPI.onOcrCancelled(() => {
+      setIsLoading(false)
+      // 保留圖片，清除文字
+      if (result) {
+        setResult({ ...result, text: '' })
+      }
+    })
+
     // Listen for show result
     window.electronAPI.onShowResult((savedResult) => {
       setResult(savedResult)
@@ -116,6 +125,10 @@ function App() {
 
   const handleCapture = () => {
     window.electronAPI.startCapture()
+  }
+
+  const handleCancelOcr = () => {
+    window.electronAPI.cancelOcr()
   }
 
   const handleSettingsClose = () => {
@@ -201,6 +214,7 @@ function App() {
       onOpenSettings={() => setView('settings')}
       onOpenHistory={() => setView('history')}
       onCapture={handleCapture}
+      onCancelOcr={handleCancelOcr}
       onRecrop={handleRecrop}
       onTextEdit={handleTextEdit}
       onGeminiOcr={handleGeminiOcr}
