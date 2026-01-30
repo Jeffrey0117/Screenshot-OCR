@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screenshot OCR - Capture your screen, instantly recognize text</title>
+  <meta name="description" content="Screenshot OCR is a desktop app for instant text recognition from screen captures. Supports multiple languages and OCR engines.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --bg-card-hover: rgba(255, 255, 255, 0.08);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-color-hover: rgba(255, 255, 255, 0.15);
+      --text-primary: #e8e8ed;
+      --text-secondary: #9090a0;
+      --text-muted: #606070;
+      --accent-start: #6366f1;
+      --accent-end: #a855f7;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --font-sans: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* === Dot Pattern Background === */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* === Gradient Orbs === */
+    .gradient-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .gradient-orb--1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-start), transparent 70%);
+      top: -200px;
+      right: -100px;
+    }
+
+    .gradient-orb--2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent-end), transparent 70%);
+      bottom: 20%;
+      left: -150px;
+      opacity: 0.25;
+    }
+
+    .gradient-orb--3 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #6366f1, transparent 70%);
+      bottom: -100px;
+      right: 10%;
+      opacity: 0.2;
+    }
+
+    /* === Layout === */
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section {
+      padding: 100px 0;
+    }
+
+    /* === Animations === */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+      50% { box-shadow: 0 0 40px var(--accent-glow), 0 0 60px rgba(168, 85, 247, 0.15); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s var(--transition), transform 0.7s var(--transition);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* === Navigation === */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      transition: background var(--transition), backdrop-filter var(--transition);
+    }
+
+    .nav.scrolled {
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .nav__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .nav__logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .nav__actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* === Language Toggle === */
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 100px;
+      padding: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lang-toggle__option {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-radius: 100px;
+      transition: color var(--transition);
+      z-index: 1;
+      position: relative;
+      user-select: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .lang-toggle__option.active {
+      color: var(--text-primary);
+    }
+
+    .lang-toggle__slider {
+      position: absolute;
+      height: calc(100% - 8px);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: transform var(--transition), width var(--transition);
+      top: 4px;
+      left: 4px;
+    }
+
+    /* === Hero === */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding-top: 80px;
+      position: relative;
+    }
+
+    .hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 100px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero__badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse-glow 2s infinite;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    }
+
+    .hero__title {
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.8s ease-out 0.1s both;
+    }
+
+    .hero__title-gradient {
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end), #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero__tagline {
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto 48px;
+      font-weight: 400;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .hero__actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.8s ease-out 0.3s both;
+    }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 100px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all var(--transition);
+      cursor: pointer;
+      border: none;
+      font-family: var(--font-sans);
+    }
+
+    .btn--primary {
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      color: white;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--accent-glow);
+    }
+
+    .btn--secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn--secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-color-hover);
+      transform: translateY(-2px);
+    }
+
+    /* === Section Header === */
+    .section-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-start);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* === Features Grid === */
+    .features {
+      background: var(--bg-secondary);
+      position: relative;
+    }
+
+    .features::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    }
+
+    .features::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    }
+
+    .features__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 36px 28px;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(168, 85, 247, 0.06));
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-color-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-card__icon {
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+      display: block;
+      position: relative;
+    }
+
+    .feature-card__title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .feature-card__desc {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      position: relative;
+    }
+
+    /* === How It Works === */
+    .how-it-works__steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      position: relative;
+    }
+
+    .how-it-works__steps::before {
+      content: '';
+      position: absolute;
+      top: 60px;
+      left: 16.67%;
+      right: 16.67%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+      opacity: 0.3;
+    }
+
+    .step-card {
+      text-align: center;
+      position: relative;
+    }
+
+    .step-card__number {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 auto 24px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .step-card__icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .step-card__title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .step-card__desc {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    /* === Shortcuts Table === */
+    .shortcuts {
+      background: var(--bg-secondary);
+      position: relative;
+    }
+
+    .shortcuts::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    }
+
+    .shortcuts::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    }
+
+    .shortcuts__table-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .shortcuts__table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .shortcuts__table th,
+    .shortcuts__table td {
+      padding: 16px 24px;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    .shortcuts__table thead th {
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .shortcuts__table tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background var(--transition);
+    }
+
+    .shortcuts__table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .shortcuts__table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    /* === Tech Stack === */
+    .tech-stack__badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .tech-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 100px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all var(--transition);
+    }
+
+    .tech-badge:hover {
+      border-color: var(--border-color-hover);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+    }
+
+    .tech-badge__icon {
+      font-size: 1.1rem;
+    }
+
+    /* === Footer === */
+    .footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .footer__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer__left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .footer__links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer__link {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .footer__link:hover {
+      color: var(--text-primary);
+    }
+
+    /* === Responsive === */
+    @media (max-width: 900px) {
+      .features__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      section {
+        padding: 72px 0;
+      }
+
+      .features__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .how-it-works__steps {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .how-it-works__steps::before {
+        display: none;
+      }
+
+      .hero__title {
+        font-size: 2.5rem;
+      }
+
+      .shortcuts__table th,
+      .shortcuts__table td {
+        padding: 14px 16px;
+        font-size: 0.88rem;
+      }
+
+      .footer__inner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .nav__logo {
+        font-size: 1.1rem;
+      }
+
+      .lang-toggle__option {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Decorative gradient orbs -->
+  <div class="gradient-orb gradient-orb--1" aria-hidden="true"></div>
+  <div class="gradient-orb gradient-orb--2" aria-hidden="true"></div>
+  <div class="gradient-orb gradient-orb--3" aria-hidden="true"></div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <div class="nav__logo">Screenshot OCR</div>
+      <div class="nav__actions">
+        <div class="lang-toggle" id="langToggle" role="radiogroup" aria-label="Language selector">
+          <div class="lang-toggle__slider" id="langSlider"></div>
+          <span class="lang-toggle__option active" data-lang="en" role="radio" aria-checked="true" tabindex="0">EN</span>
+          <span class="lang-toggle__option" data-lang="zh" role="radio" aria-checked="false" tabindex="0">繁中</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <span class="hero__badge">
+        <span class="hero__badge-dot"></span>
+        <span data-i18n="hero.badge">Open Source &amp; Free</span>
+      </span>
+      <h1 class="hero__title">
+        <span class="hero__title-gradient">Screenshot OCR</span>
+      </h1>
+      <p class="hero__tagline" data-i18n="hero.tagline">
+        Capture your screen, instantly recognize text.
+      </p>
+      <div class="hero__actions">
+        <a href="https://github.com" class="btn btn--primary" data-i18n="hero.cta.download">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+        <a href="https://github.com" class="btn btn--secondary" data-i18n="hero.cta.github">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="features.label">Features</span>
+        <h2 class="section-title" data-i18n="features.title">Everything you need</h2>
+        <p class="section-subtitle" data-i18n="features.subtitle">A powerful yet lightweight tool designed for seamless text extraction from your screen.</p>
+      </div>
+      <div class="features__grid">
+
+        <div class="feature-card reveal reveal-delay-1">
+          <span class="feature-card__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="4" y="8" width="28" height="20" rx="3" stroke="url(#g1)" stroke-width="2"/><path d="M14 18l3 3 5-6" stroke="url(#g1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="g1" x1="4" y1="8" x2="32" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="feature-card__title" data-i18n="features.cards.0.title">Quick Capture</h3>
+          <p class="feature-card__desc" data-i18n="features.cards.0.desc">Press a global hotkey to instantly capture any region of your screen. Fast, precise, and always ready.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2">
+          <span class="feature-card__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="12" stroke="url(#g2)" stroke-width="2"/><path d="M18 12v6l4 4" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/><defs><linearGradient id="g2" x1="6" y1="6" x2="30" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="feature-card__title" data-i18n="features.cards.1.title">Instant Recognition</h3>
+          <p class="feature-card__desc" data-i18n="features.cards.1.desc">Text is recognized immediately after capture. Results appear in milliseconds, ready to copy or search.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3">
+          <span class="feature-card__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M8 10h8v4H8zM20 10h8v4h-8zM8 18h8v4H8zM20 18h8v4h-8zM14 26h8v4h-8z" stroke="url(#g3)" stroke-width="1.5" rx="1"/><defs><linearGradient id="g3" x1="8" y1="10" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="feature-card__title" data-i18n="features.cards.2.title">Multi-language</h3>
+          <p class="feature-card__desc" data-i18n="features.cards.2.desc">Supports Traditional Chinese, Simplified Chinese, English, Japanese, and Korean text recognition.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-1">
+          <span class="feature-card__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M18 6v4M18 26v4M6 18h4M26 18h4" stroke="url(#g4)" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="6" stroke="url(#g4)" stroke-width="2"/><path d="M12 12l2 2M22 22l2 2M12 24l2-2M22 12l2-2" stroke="url(#g4)" stroke-width="1.5" stroke-linecap="round"/><defs><linearGradient id="g4" x1="6" y1="6" x2="30" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="feature-card__title" data-i18n="features.cards.3.title">Offline Mode</h3>
+          <p class="feature-card__desc" data-i18n="features.cards.3.desc">Works completely offline with Tesseract.js and Windows OCR. No internet connection required.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2">
+          <span class="feature-card__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="10" y="24" width="16" height="6" rx="2" stroke="url(#g5)" stroke-width="2"/><path d="M14 24V14a4 4 0 0 1 8 0v10" stroke="url(#g5)" stroke-width="2"/><circle cx="18" cy="10" r="2" fill="url(#g5)"/><defs><linearGradient id="g5" x1="10" y1="6" x2="26" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="feature-card__title" data-i18n="features.cards.4.title">System Tray</h3>
+          <p class="feature-card__desc" data-i18n="features.cards.4.desc">Runs silently in the background. Always accessible from the system tray, never in your way.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3">
+          <span class="feature-card__icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M12 20c-2 0-4 1.5-4 4s2 4 4 4h12c2 0 4-1.5 4-4s-2-4-4-4" stroke="url(#g6)" stroke-width="2" stroke-linecap="round"/><path d="M14 20v-4a4 4 0 0 1 8 0v4" stroke="url(#g6)" stroke-width="2"/><circle cx="18" cy="12" r="4" stroke="url(#g6)" stroke-width="2"/><path d="M15 12h6M18 9v6" stroke="url(#g6)" stroke-width="1.5" stroke-linecap="round"/><defs><linearGradient id="g6" x1="8" y1="8" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="feature-card__title" data-i18n="features.cards.5.title">AI Powered</h3>
+          <p class="feature-card__desc" data-i18n="features.cards.5.desc">Leverage multiple OCR engines including Google Gemini AI and PaddleOCR for the best accuracy.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="howItWorks.label">How It Works</span>
+        <h2 class="section-title" data-i18n="howItWorks.title">Three simple steps</h2>
+        <p class="section-subtitle" data-i18n="howItWorks.subtitle">From screenshot to usable text in seconds.</p>
+      </div>
+      <div class="how-it-works__steps">
+
+        <div class="step-card reveal reveal-delay-1">
+          <div class="step-card__number">1</div>
+          <span class="step-card__icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="8" y="10" width="32" height="24" rx="3" stroke="url(#gs1)" stroke-width="2"/><path d="M8 14h32" stroke="url(#gs1)" stroke-width="2"/><circle cx="12" cy="12" r="1" fill="#ef4444"/><circle cx="16" cy="12" r="1" fill="#eab308"/><circle cx="20" cy="12" r="1" fill="#22c55e"/><rect x="16" y="20" width="16" height="8" rx="1" stroke="url(#gs1)" stroke-width="1.5" stroke-dasharray="3 2"/><defs><linearGradient id="gs1" x1="8" y1="10" x2="40" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="step-card__title" data-i18n="howItWorks.steps.0.title">Capture</h3>
+          <p class="step-card__desc" data-i18n="howItWorks.steps.0.desc">Press Ctrl+Shift+S to capture any region of your screen.</p>
+        </div>
+
+        <div class="step-card reveal reveal-delay-2">
+          <div class="step-card__number">2</div>
+          <span class="step-card__icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="10" y="12" width="28" height="20" rx="2" stroke="url(#gs2)" stroke-width="2"/><path d="M16 20h16M16 24h12M16 28h8" stroke="url(#gs2)" stroke-width="1.5" stroke-linecap="round"/><circle cx="38" cy="14" r="5" fill="var(--bg-primary)" stroke="url(#gs2)" stroke-width="2"/><path d="M36 14l2 2 3-3" stroke="url(#gs2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="gs2" x1="10" y1="12" x2="38" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="step-card__title" data-i18n="howItWorks.steps.1.title">Recognize</h3>
+          <p class="step-card__desc" data-i18n="howItWorks.steps.1.desc">AI automatically recognizes text from your screenshot.</p>
+        </div>
+
+        <div class="step-card reveal reveal-delay-3">
+          <div class="step-card__number">3</div>
+          <span class="step-card__icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="12" y="10" width="24" height="28" rx="2" stroke="url(#gs3)" stroke-width="2"/><path d="M18 18h12M18 22h12M18 26h8" stroke="url(#gs3)" stroke-width="1.5" stroke-linecap="round"/><path d="M30 30l4 4M34 34l-1.5-1.5" stroke="url(#gs3)" stroke-width="2" stroke-linecap="round"/><circle cx="28" cy="28" r="4" stroke="url(#gs3)" stroke-width="1.5"/><defs><linearGradient id="gs3" x1="12" y1="10" x2="36" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>
+          </span>
+          <h3 class="step-card__title" data-i18n="howItWorks.steps.2.title">Use</h3>
+          <p class="step-card__desc" data-i18n="howItWorks.steps.2.desc">Copy, search, or save results instantly.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyboard Shortcuts -->
+  <section class="shortcuts" id="shortcuts">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="shortcuts.label">Keyboard Shortcuts</span>
+        <h2 class="section-title" data-i18n="shortcuts.title">Built for speed</h2>
+        <p class="section-subtitle" data-i18n="shortcuts.subtitle">Access every feature without lifting your hands from the keyboard.</p>
+      </div>
+      <div class="shortcuts__table-wrap reveal">
+        <table class="shortcuts__table">
+          <thead>
+            <tr>
+              <th data-i18n="shortcuts.table.shortcut">Shortcut</th>
+              <th data-i18n="shortcuts.table.action">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><kbd class="kbd">Ctrl + Shift + S</kbd></td>
+              <td data-i18n="shortcuts.table.rows.0">Capture screenshot region</td>
+            </tr>
+            <tr>
+              <td><kbd class="kbd">Ctrl + Shift + C</kbd></td>
+              <td data-i18n="shortcuts.table.rows.1">Copy recognized text</td>
+            </tr>
+            <tr>
+              <td><kbd class="kbd">Ctrl + Shift + G</kbd></td>
+              <td data-i18n="shortcuts.table.rows.2">Google search recognized text</td>
+            </tr>
+            <tr>
+              <td><kbd class="kbd">Ctrl + Shift + H</kbd></td>
+              <td data-i18n="shortcuts.table.rows.3">Open recognition history</td>
+            </tr>
+            <tr>
+              <td><kbd class="kbd">Esc</kbd></td>
+              <td data-i18n="shortcuts.table.rows.4">Cancel capture / Close window</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack -->
+  <section class="tech-stack" id="tech-stack">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="techStack.label">Tech Stack</span>
+        <h2 class="section-title" data-i18n="techStack.title">Built with modern tools</h2>
+      </div>
+      <div class="tech-stack__badges reveal">
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 1c6.075 0 11 1.79 11 4v14c0 2.21-4.925 4-11 4S1 21.21 1 19V5c0-2.21 4.925-4 11-4z" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="11" ry="4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </span>Electron 28</span>
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2" fill="#61dafb"/><ellipse cx="12" cy="12" rx="10" ry="4" stroke="#61dafb" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="10" ry="4" stroke="#61dafb" stroke-width="1.5" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" stroke="#61dafb" stroke-width="1.5" transform="rotate(120 12 12)"/></svg>
+        </span>React 18</span>
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" stroke="#bd34fe" stroke-width="1.5"/><polygon points="12,6 18,9.5 18,14.5 12,18 6,14.5 6,9.5" stroke="#bd34fe" stroke-width="1.5"/></svg>
+        </span>Vite 5</span>
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M3 21L21 3" stroke="#3178c6" stroke-width="2"/><rect x="6" y="6" width="12" height="12" rx="2" stroke="#3178c6" stroke-width="1.5"/></svg>
+        </span>TypeScript</span>
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="#f59e0b" stroke-width="1.5"/><path d="M7 12h4M14 10v4M13 10h2M13 14h2" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>Tesseract.js 5</span>
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 17l10 5 10-5" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 12l10 5 10-5" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>PaddleOCR</span>
+        <span class="tech-badge"><span class="tech-badge__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 1 0 10 10" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#ec4899" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="3" stroke="#8b5cf6" stroke-width="1.5"/></svg>
+        </span>Google Gemini AI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__left">
+          <span data-i18n="footer.license">MIT License</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>Screenshot OCR</span>
+        </div>
+        <div class="footer__links">
+          <a href="https://github.com" class="footer__link" data-i18n="footer.github">GitHub</a>
+          <a href="#features" class="footer__link" data-i18n="footer.features">Features</a>
+          <a href="#shortcuts" class="footer__link" data-i18n="footer.shortcuts">Shortcuts</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ===== i18n Translations ===== */
+    const translations = {
+      en: {
+        'hero.badge': 'Open Source & Free',
+        'hero.tagline': 'Capture your screen, instantly recognize text.',
+        'hero.cta.download': 'Download',
+        'hero.cta.github': 'GitHub',
+        'features.label': 'Features',
+        'features.title': 'Everything you need',
+        'features.subtitle': 'A powerful yet lightweight tool designed for seamless text extraction from your screen.',
+        'features.cards.0.title': 'Quick Capture',
+        'features.cards.0.desc': 'Press a global hotkey to instantly capture any region of your screen. Fast, precise, and always ready.',
+        'features.cards.1.title': 'Instant Recognition',
+        'features.cards.1.desc': 'Text is recognized immediately after capture. Results appear in milliseconds, ready to copy or search.',
+        'features.cards.2.title': 'Multi-language',
+        'features.cards.2.desc': 'Supports Traditional Chinese, Simplified Chinese, English, Japanese, and Korean text recognition.',
+        'features.cards.3.title': 'Offline Mode',
+        'features.cards.3.desc': 'Works completely offline with Tesseract.js and Windows OCR. No internet connection required.',
+        'features.cards.4.title': 'System Tray',
+        'features.cards.4.desc': 'Runs silently in the background. Always accessible from the system tray, never in your way.',
+        'features.cards.5.title': 'AI Powered',
+        'features.cards.5.desc': 'Leverage multiple OCR engines including Google Gemini AI and PaddleOCR for the best accuracy.',
+        'howItWorks.label': 'How It Works',
+        'howItWorks.title': 'Three simple steps',
+        'howItWorks.subtitle': 'From screenshot to usable text in seconds.',
+        'howItWorks.steps.0.title': 'Capture',
+        'howItWorks.steps.0.desc': 'Press Ctrl+Shift+S to capture any region of your screen.',
+        'howItWorks.steps.1.title': 'Recognize',
+        'howItWorks.steps.1.desc': 'AI automatically recognizes text from your screenshot.',
+        'howItWorks.steps.2.title': 'Use',
+        'howItWorks.steps.2.desc': 'Copy, search, or save results instantly.',
+        'shortcuts.label': 'Keyboard Shortcuts',
+        'shortcuts.title': 'Built for speed',
+        'shortcuts.subtitle': 'Access every feature without lifting your hands from the keyboard.',
+        'shortcuts.table.shortcut': 'Shortcut',
+        'shortcuts.table.action': 'Action',
+        'shortcuts.table.rows.0': 'Capture screenshot region',
+        'shortcuts.table.rows.1': 'Copy recognized text',
+        'shortcuts.table.rows.2': 'Google search recognized text',
+        'shortcuts.table.rows.3': 'Open recognition history',
+        'shortcuts.table.rows.4': 'Cancel capture / Close window',
+        'techStack.label': 'Tech Stack',
+        'techStack.title': 'Built with modern tools',
+        'footer.license': 'MIT License',
+        'footer.github': 'GitHub',
+        'footer.features': 'Features',
+        'footer.shortcuts': 'Shortcuts'
+      },
+      zh: {
+        'hero.badge': '開源且免費',
+        'hero.tagline': '一鍵截圖，即時辨識文字。',
+        'hero.cta.download': '下載',
+        'hero.cta.github': 'GitHub',
+        'features.label': '功能特色',
+        'features.title': '滿足你所有需求',
+        'features.subtitle': '一個強大而輕量的工具，為螢幕文字擷取而設計。',
+        'features.cards.0.title': '快捷截圖',
+        'features.cards.0.desc': '按下全域快捷鍵，即刻擷取螢幕上任何區域。快速、精確、隨時待命。',
+        'features.cards.1.title': '即時辨識',
+        'features.cards.1.desc': '截圖後立即辨識文字。結果在毫秒內呈現，可直接複製或搜尋。',
+        'features.cards.2.title': '多語言支援',
+        'features.cards.2.desc': '支援繁體中文、簡體中文、英文、日文及韓文文字辨識。',
+        'features.cards.3.title': '離線運作',
+        'features.cards.3.desc': '使用 Tesseract.js 和 Windows OCR 即可完全離線運作，無需網路連線。',
+        'features.cards.4.title': '系統托盤',
+        'features.cards.4.desc': '在背景靜默運行，隨時從系統托盤存取，絕不干擾你的工作。',
+        'features.cards.5.title': 'AI 驅動',
+        'features.cards.5.desc': '結合 Google Gemini AI 和 PaddleOCR 等多種 OCR 引擎，提供最佳辨識準確度。',
+        'howItWorks.label': '使用方式',
+        'howItWorks.title': '三個簡單步驟',
+        'howItWorks.subtitle': '從截圖到可用文字，只需幾秒鐘。',
+        'howItWorks.steps.0.title': '截圖',
+        'howItWorks.steps.0.desc': '按下 Ctrl+Shift+S 開始截圖，選取螢幕上任何區域。',
+        'howItWorks.steps.1.title': '辨識',
+        'howItWorks.steps.1.desc': 'AI 自動辨識截圖中的文字。',
+        'howItWorks.steps.2.title': '使用',
+        'howItWorks.steps.2.desc': '複製、搜尋或儲存結果，立即使用。',
+        'shortcuts.label': '鍵盤快捷鍵',
+        'shortcuts.title': '為效率而生',
+        'shortcuts.subtitle': '雙手無需離開鍵盤，即可操作所有功能。',
+        'shortcuts.table.shortcut': '快捷鍵',
+        'shortcuts.table.action': '功能',
+        'shortcuts.table.rows.0': '擷取螢幕截圖區域',
+        'shortcuts.table.rows.1': '複製辨識文字',
+        'shortcuts.table.rows.2': 'Google 搜尋辨識文字',
+        'shortcuts.table.rows.3': '開啟辨識歷史紀錄',
+        'shortcuts.table.rows.4': '取消擷取 / 關閉視窗',
+        'techStack.label': '技術架構',
+        'techStack.title': '以現代工具打造',
+        'footer.license': 'MIT 授權條款',
+        'footer.github': 'GitHub',
+        'footer.features': '功能特色',
+        'footer.shortcuts': '快捷鍵'
+      }
+    };
+
+    /* ===== Language Toggle ===== */
+    let currentLang = 'en';
+    const langToggle = document.getElementById('langToggle');
+    const langSlider = document.getElementById('langSlider');
+    const langOptions = langToggle.querySelectorAll('.lang-toggle__option');
+
+    function positionSlider() {
+      const activeOption = langToggle.querySelector('.lang-toggle__option.active');
+      if (!activeOption) return;
+      const toggleRect = langToggle.getBoundingClientRect();
+      const optionRect = activeOption.getBoundingClientRect();
+      langSlider.style.width = optionRect.width + 'px';
+      langSlider.style.transform = 'translateX(' + (optionRect.left - toggleRect.left - 4) + 'px)';
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+
+      langOptions.forEach(function(opt) {
+        const isActive = opt.dataset.lang === lang;
+        opt.classList.toggle('active', isActive);
+        opt.setAttribute('aria-checked', isActive.toString());
+      });
+
+      positionSlider();
+
+      var elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        var translation = translations[lang][key];
+        if (translation) {
+          // For buttons with SVG icons, preserve the SVG
+          var svg = el.querySelector('svg');
+          if (svg) {
+            el.textContent = '';
+            el.appendChild(svg);
+            el.append(' ' + translation);
+          } else {
+            el.textContent = translation;
+          }
+        }
+      });
+    }
+
+    langOptions.forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        setLanguage(opt.dataset.lang);
+      });
+      opt.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setLanguage(opt.dataset.lang);
+        }
+      });
+    });
+
+    // Initialize slider position after fonts load
+    window.addEventListener('load', positionSlider);
+    window.addEventListener('resize', positionSlider);
+
+    /* ===== Nav Scroll Effect ===== */
+    var nav = document.getElementById('nav');
+    var lastScrollY = 0;
+
+    function handleNavScroll() {
+      var scrollY = window.scrollY;
+      nav.classList.toggle('scrolled', scrollY > 50);
+      lastScrollY = scrollY;
+    }
+
+    window.addEventListener('scroll', handleNavScroll, { passive: true });
+
+    /* ===== Intersection Observer for Reveal Animations ===== */
+    var revealElements = document.querySelectorAll('.reveal');
+
+    var revealObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -60px 0px'
+    });
+
+    revealElements.forEach(function(el) {
+      revealObserver.observe(el);
+    });
+
+    /* ===== Smooth Scroll for Anchor Links ===== */
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        var targetId = this.getAttribute('href').substring(1);
+        var target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
