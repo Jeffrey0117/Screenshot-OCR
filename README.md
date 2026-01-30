@@ -1,54 +1,64 @@
-# Screenshot OCR
+<p align="center">
+  <img src="assets/icon.png" alt="Screenshot OCR" width="128" />
+</p>
 
-截圖文字辨識工具 - 一鍵截圖，即時辨識文字，複製或搜尋。
+<h1 align="center">Screenshot OCR</h1>
 
-## 功能
+<p align="center">
+  Capture your screen, instantly recognize text, copy or search.
+</p>
 
-- **快捷截圖** - `Ctrl+Shift+S` 全域快捷鍵觸發截圖
-- **即時辨識** - 選取區域後自動 OCR 辨識文字
-- **多語言支援** - 繁體中文、簡體中文、英文、日文、韓文
-- **離線運作** - 使用 Tesseract.js，無需網路連線
-- **系統托盤** - 最小化常駐，隨時可用
+<p align="center">
+  <a href="README.zh-TW.md">繁體中文</a>
+</p>
 
-## 安裝
+## Features
+
+- **Quick Capture** - Global hotkey `Ctrl+Shift+S` to trigger screenshot
+- **Instant Recognition** - Automatic OCR after selecting a region
+- **Multi-language** - Traditional Chinese, Simplified Chinese, English, Japanese, Korean
+- **Offline** - Powered by Tesseract.js, no internet required
+- **System Tray** - Runs minimized in the background, always ready
+
+## Install
 
 ```bash
-# 安裝依賴
+# Install dependencies
 npm install
 
-# 下載 OCR 語言檔 (首次執行)
+# Download OCR language data (first run)
 npm run download-tessdata
 ```
 
-## 開發
+## Development
 
 ```bash
-# 開發模式
+# Dev mode
 npm run dev
 
-# 打包
+# Build
 npm run electron:build
 ```
 
-## 使用方式
+## Usage
 
-1. 啟動應用程式
-2. 按 `Ctrl+Shift+S` 開始截圖
-3. 拖曳選取要辨識的區域
-4. 辨識結果自動複製到剪貼簿
-5. 可點擊「複製」或「Google 搜尋」
+1. Launch the app
+2. Press `Ctrl+Shift+S` to start capturing
+3. Drag to select the region to recognize
+4. Recognized text is automatically copied to clipboard
+5. Click "Copy" or "Google Search" for further actions
 
-## 快捷鍵
+## Shortcuts
 
-| 快捷鍵 | 功能 |
-|--------|------|
-| `Ctrl+Shift+S` | 截圖辨識 |
-| `Ctrl+C` | 複製文字 |
-| `Ctrl+G` | Google 搜尋 |
-| `Ctrl+P` | 釘選視窗 |
-| `Esc` | 取消截圖/關閉視窗 |
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+S` | Capture & recognize |
+| `Ctrl+C` | Copy text |
+| `Ctrl+G` | Google search |
+| `Ctrl+P` | Pin window |
+| `Esc` | Cancel capture / close window |
 
-## 技術棧
+## Tech Stack
 
 - Electron 28
 - React 18
