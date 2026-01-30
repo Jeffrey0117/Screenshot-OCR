@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://jeffrey0117.github.io/Screenshot-OCR/">Homepage</a> &nbsp;|&nbsp;
   <a href="README.zh-TW.md">繁體中文</a>
 </p>
 
