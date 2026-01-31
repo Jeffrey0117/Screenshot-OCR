@@ -147,9 +147,14 @@
       max-width: 1120px; margin: 0 auto; padding: 0 24px;
     }
     .nav__logo {
+      display: flex; align-items: center; gap: 10px;
       font-size: 1.25rem; font-weight: 700;
       color: var(--md-primary);
       letter-spacing: -0.01em;
+      text-decoration: none;
+    }
+    .nav__logo img {
+      width: 32px; height: 32px;
     }
 
     /* === Language Toggle (MD3 Segmented Button) === */
@@ -201,6 +206,11 @@
       overflow: hidden;
       max-width: 900px;
       margin: 0 auto;
+    }
+    .hero__logo {
+      width: 96px; height: 96px;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s var(--ease-md);
     }
     .hero__badge {
       display: inline-flex; align-items: center; gap: 8px;
@@ -465,6 +475,110 @@
       box-shadow: 0 1px 0 var(--md-outline-variant);
     }
 
+    /* === Setup Guide === */
+    .setup-section { position: relative; }
+    .setup__grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .setup-card {
+      background: var(--md-surface-container);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      transition: all var(--duration-std) var(--ease-md);
+    }
+    .setup-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .setup-card--full {
+      grid-column: 1 / -1;
+    }
+    .setup-card__header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .setup-card__icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .setup-card__icon--free {
+      background: #d4edda;
+      color: #386A20;
+    }
+    .setup-card__icon--api {
+      background: var(--md-primary-container);
+      color: var(--md-on-primary-container);
+    }
+    .setup-card__icon svg { width: 22px; height: 22px; }
+    .setup-card__badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .setup-card__badge--free {
+      background: #d4edda; color: #386A20;
+    }
+    .setup-card__badge--optional {
+      background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);
+    }
+    .setup-card__title {
+      font-size: 1.125rem; font-weight: 500;
+      color: var(--md-on-surface);
+      margin-bottom: 4px;
+    }
+    .setup-card__desc {
+      font-size: 0.875rem;
+      color: var(--md-on-surface-variant);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .setup-steps {
+      list-style: none;
+      counter-reset: setup-step;
+    }
+    .setup-steps li {
+      counter-increment: setup-step;
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      font-size: 0.875rem;
+      color: var(--md-on-surface);
+      line-height: 1.5;
+    }
+    .setup-steps li + li {
+      border-top: 1px solid var(--md-outline-variant);
+    }
+    .setup-steps li::before {
+      content: counter(setup-step);
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .setup-steps code {
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--md-surface-container-high);
+      font-family: 'Roboto Mono', 'Consolas', monospace;
+      font-size: 0.8rem;
+    }
+    .setup-steps a {
+      color: var(--md-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .setup-steps a:hover { text-decoration: underline; }
+
     /* === Tech Stack === */
     .tech-section { position: relative; }
     .tech__badges {
@@ -524,6 +638,7 @@
       .features__grid { grid-template-columns: 1fr; }
       .steps__grid { grid-template-columns: 1fr; gap: 48px; }
       .steps__line { display: none; }
+      .setup__grid { grid-template-columns: 1fr; }
       .hero__container { padding: 56px 24px; border-radius: var(--radius-lg); }
       .hero__title { font-size: 2rem; }
       .shortcuts__table thead th,
@@ -539,7 +654,7 @@
   <!-- Navigation -->
   <nav class="nav" id="nav">
     <div class="nav__inner">
-      <div class="nav__logo">Screenshot OCR</div>
+      <a href="#hero" class="nav__logo"><img src="icon.png" alt="Logo">Screenshot OCR</a>
       <div class="lang-toggle" id="langToggle" role="radiogroup" aria-label="Language selector">
         <div class="lang-toggle__slider" id="langSlider"></div>
         <span class="lang-toggle__option active" data-lang="en" role="radio" aria-checked="true" tabindex="0">EN</span>
@@ -554,6 +669,7 @@
     <div class="blur-shape blur-shape--3" aria-hidden="true"></div>
     <div class="container">
       <div class="hero__container">
+        <img src="icon.png" alt="Screenshot OCR Logo" class="hero__logo">
         <span class="hero__badge">
           <span class="hero__badge-dot"></span>
           <span data-i18n="hero.badge">Open Source &amp; Free</span>
@@ -720,6 +836,57 @@
     </div>
   </section>
 
+  <!-- Setup Guide -->
+  <section class="setup-section" id="setup">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="setup.label">Setup Guide</span>
+        <h2 class="section-title" data-i18n="setup.title">OCR engines at a glance</h2>
+        <p class="section-subtitle" data-i18n="setup.subtitle">Most engines work out of the box. Gemini AI requires a free API key for enhanced accuracy.</p>
+      </div>
+      <div class="setup__grid">
+
+        <div class="setup-card reveal reveal-delay-1">
+          <div class="setup-card__header">
+            <div class="setup-card__icon setup-card__icon--free">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <div class="setup-card__title" data-i18n="setup.offline.title">Offline Engines</div>
+              <span class="setup-card__badge setup-card__badge--free" data-i18n="setup.offline.badge">No Setup Needed</span>
+            </div>
+          </div>
+          <p class="setup-card__desc" data-i18n="setup.offline.desc">Tesseract.js, Windows OCR, and PaddleOCR all work offline with zero configuration. Just install and start using.</p>
+          <ol class="setup-steps">
+            <li data-i18n="setup.offline.step1">Download and install Screenshot OCR</li>
+            <li data-i18n="setup.offline.step2">Press <code>Ctrl+Shift+S</code> to capture</li>
+            <li data-i18n="setup.offline.step3">Text is recognized automatically</li>
+          </ol>
+        </div>
+
+        <div class="setup-card reveal reveal-delay-2">
+          <div class="setup-card__header">
+            <div class="setup-card__icon setup-card__icon--api">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5-4 6v2H9v-2c-2-1-4-3-4-6a7 7 0 0 1 7-7z"/><path d="M9 21h6"/></svg>
+            </div>
+            <div>
+              <div class="setup-card__title">Google Gemini AI</div>
+              <span class="setup-card__badge setup-card__badge--optional" data-i18n="setup.gemini.badge">Optional - API Key</span>
+            </div>
+          </div>
+          <p class="setup-card__desc" data-i18n="setup.gemini.desc">Gemini 2.0 Flash provides superior accuracy for artistic fonts and complex layouts. Free tier available.</p>
+          <ol class="setup-steps">
+            <li data-i18n-html="setup.gemini.step1">Visit <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> and create an API key</li>
+            <li data-i18n="setup.gemini.step2">Open Screenshot OCR Settings</li>
+            <li data-i18n="setup.gemini.step3">Paste the API key in the Gemini API Key field</li>
+            <li data-i18n="setup.gemini.step4">Click the Gemini button when recognizing to use AI</li>
+          </ol>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- Tech Stack -->
   <section class="tech-section" id="tech-stack">
     <div class="container">
@@ -772,6 +939,7 @@
         <div class="footer__links">
           <a href="https://github.com/Jeffrey0117/Screenshot-OCR" class="footer__link" data-i18n="footer.github">GitHub</a>
           <a href="#features" class="footer__link" data-i18n="footer.features">Features</a>
+          <a href="#setup" class="footer__link" data-i18n="footer.setup">Setup</a>
           <a href="#shortcuts" class="footer__link" data-i18n="footer.shortcuts">Shortcuts</a>
         </div>
       </div>
@@ -820,11 +988,27 @@
         'shortcuts.table.rows.2': 'Google search recognized text',
         'shortcuts.table.rows.3': 'Open recognition history',
         'shortcuts.table.rows.4': 'Cancel capture / Close window',
+        'setup.label': 'Setup Guide',
+        'setup.title': 'OCR engines at a glance',
+        'setup.subtitle': 'Most engines work out of the box. Gemini AI requires a free API key for enhanced accuracy.',
+        'setup.offline.title': 'Offline Engines',
+        'setup.offline.badge': 'No Setup Needed',
+        'setup.offline.desc': 'Tesseract.js, Windows OCR, and PaddleOCR all work offline with zero configuration. Just install and start using.',
+        'setup.offline.step1': 'Download and install Screenshot OCR',
+        'setup.offline.step2': 'Press Ctrl+Shift+S to capture',
+        'setup.offline.step3': 'Text is recognized automatically',
+        'setup.gemini.badge': 'Optional - API Key',
+        'setup.gemini.desc': 'Gemini 2.0 Flash provides superior accuracy for artistic fonts and complex layouts. Free tier available.',
+        'setup.gemini.step1': 'Visit <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> and create an API key',
+        'setup.gemini.step2': 'Open Screenshot OCR Settings',
+        'setup.gemini.step3': 'Paste the API key in the Gemini API Key field',
+        'setup.gemini.step4': 'Click the Gemini button when recognizing to use AI',
         'techStack.label': 'Tech Stack',
         'techStack.title': 'Built with modern tools',
         'footer.license': 'MIT License',
         'footer.github': 'GitHub',
         'footer.features': 'Features',
+        'footer.setup': 'Setup',
         'footer.shortcuts': 'Shortcuts'
       },
       zh: {
@@ -866,11 +1050,27 @@
         'shortcuts.table.rows.2': 'Google 搜尋辨識文字',
         'shortcuts.table.rows.3': '開啟辨識歷史紀錄',
         'shortcuts.table.rows.4': '取消擷取 / 關閉視窗',
+        'setup.label': '設定指南',
+        'setup.title': 'OCR 引擎一覽',
+        'setup.subtitle': '大多數引擎開箱即用。Gemini AI 需要免費 API 金鑰以提升辨識精度。',
+        'setup.offline.title': '離線引擎',
+        'setup.offline.badge': '無需設定',
+        'setup.offline.desc': 'Tesseract.js、Windows OCR 和 PaddleOCR 皆為離線運作，零設定即可使用。',
+        'setup.offline.step1': '下載並安裝 Screenshot OCR',
+        'setup.offline.step2': '按下 Ctrl+Shift+S 開始截圖',
+        'setup.offline.step3': '文字會自動辨識完成',
+        'setup.gemini.badge': '選配 - 需 API 金鑰',
+        'setup.gemini.desc': 'Gemini 2.0 Flash 對藝術字體和複雜排版有更高的辨識準確度，有免費額度可用。',
+        'setup.gemini.step1': '前往 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 建立 API 金鑰',
+        'setup.gemini.step2': '開啟 Screenshot OCR 設定',
+        'setup.gemini.step3': '在 Gemini API Key 欄位貼上金鑰',
+        'setup.gemini.step4': '辨識時點擊 Gemini 按鈕即可使用 AI',
         'techStack.label': '技術架構',
         'techStack.title': '以現代工具打造',
         'footer.license': 'MIT 授權條款',
         'footer.github': 'GitHub',
         'footer.features': '功能特色',
+        'footer.setup': '設定指南',
         'footer.shortcuts': '快捷鍵'
       }
     };
@@ -912,6 +1112,12 @@
             el.textContent = text;
           }
         }
+      });
+      /* Handle HTML i18n (elements with links inside) */
+      document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n-html');
+        var html = translations[lang][key];
+        if (html) el.innerHTML = html;
       });
     }
 
