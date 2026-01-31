@@ -251,7 +251,7 @@ export function ResultPopup({
         {titleBar}
         <div className="empty-content">
           <div className="empty-state">
-            <div className="empty-icon">📷</div>
+            <img className="empty-icon-img" src="/icon.png" alt="Screenshot OCR" />
             <p>按 Ctrl+Shift+S 截圖辨識</p>
           </div>
         </div>

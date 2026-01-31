@@ -19,16 +19,9 @@ interface AppSettings {
   ocrAccuracy: 'fast' | 'balanced' | 'accurate'
   preprocessEnabled: boolean
   preprocessAutoInvert: boolean
+  geminiApiKey: string
   theme: 'light' | 'dark' | 'system'
 }
-
-const LANGUAGES = [
-  { code: 'eng', name: 'English' },
-  { code: 'chi_tra', name: '繁體中文' },
-  { code: 'chi_sim', name: '简体中文' },
-  { code: 'jpn', name: '日本語' },
-  { code: 'kor', name: '한국어' }
-]
 
 export function Settings({ onClose }: SettingsProps) {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -61,18 +54,8 @@ export function Settings({ onClose }: SettingsProps) {
     setSettings({ ...settings, [key]: value })
   }
 
-  const handleLanguageToggle = (langCode: string) => {
-    if (!settings) return
-    const current = settings.ocrLanguages
-    const updated = current.includes(langCode)
-      ? current.filter(l => l !== langCode)
-      : [...current, langCode]
-
-    // Ensure at least one language is selected
-    if (updated.length === 0) return
-
-    handleChange('ocrLanguages', updated)
-  }
+  const displayShortcut = (s: string) => s.replace(/CommandOrControl/g, 'Ctrl')
+  const toElectronShortcut = (s: string) => s.replace(/\bCtrl\b/g, 'CommandOrControl')
 
   if (!settings) {
     return (
@@ -146,10 +129,10 @@ export function Settings({ onClose }: SettingsProps) {
             <label>截圖辨識</label>
             <input
               type="text"
-              value={settings.shortcuts.capture}
+              value={displayShortcut(settings.shortcuts.capture)}
               onChange={e => handleChange('shortcuts', {
                 ...settings.shortcuts,
-                capture: e.target.value
+                capture: toElectronShortcut(e.target.value)
               })}
               placeholder="Ctrl+Shift+S"
             />
@@ -161,18 +144,15 @@ export function Settings({ onClose }: SettingsProps) {
           <h3>OCR 設定</h3>
 
           <div className="setting-item">
-            <label>辨識語言</label>
-            <div className="language-grid">
-              {LANGUAGES.map(lang => (
-                <label key={lang.code} className="language-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.ocrLanguages.includes(lang.code)}
-                    onChange={() => handleLanguageToggle(lang.code)}
-                  />
-                  <span>{lang.name}</span>
-                </label>
-              ))}
+            <label>Gemini API Key</label>
+            <input
+              type="password"
+              value={settings.geminiApiKey}
+              onChange={e => handleChange('geminiApiKey', e.target.value)}
+              placeholder="貼上 Google AI Studio 的 API Key"
+            />
+            <div className="setting-hint">
+              前往 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免費取得
             </div>
           </div>
 
