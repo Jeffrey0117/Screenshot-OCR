@@ -26,8 +26,8 @@ interface AppSettings {
 export function Settings({ onClose }: SettingsProps) {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
-  // Load settings
   useEffect(() => {
     loadSettings()
   }, [])
@@ -41,15 +41,11 @@ export function Settings({ onClose }: SettingsProps) {
     if (!settings) return
     setSaving(true)
     await window.electronAPI.updateSettings(settings as unknown as Record<string, unknown>)
-    // Apply theme immediately
     document.documentElement.setAttribute('data-theme', settings.theme)
     setSaving(false)
   }
 
-  const handleChange = <K extends keyof AppSettings>(
-    key: K,
-    value: AppSettings[K]
-  ) => {
+  const handleChange = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     if (!settings) return
     setSettings({ ...settings, [key]: value })
   }
@@ -70,199 +66,124 @@ export function Settings({ onClose }: SettingsProps) {
       {/* Header */}
       <div className="settings-header">
         <h2>設定</h2>
-        <button className="close-btn" onClick={onClose}>✕</button>
+        <div className="header-actions">
+          <div className="theme-switcher">
+            {(['light', 'dark', 'system'] as const).map(t => (
+              <button
+                key={t}
+                className={`theme-btn ${settings.theme === t ? 'active' : ''}`}
+                onClick={() => handleChange('theme', t)}
+              >
+                {t === 'light' ? '☀' : t === 'dark' ? '☾' : '⚙'}
+              </button>
+            ))}
+          </div>
+          <button className="close-btn" onClick={onClose}>✕</button>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="settings-content">
-        {/* General */}
-        <section className="settings-section">
-          <h3>一般</h3>
+      {/* Content — no scroll needed */}
+      <div className="settings-body">
 
-          <label className="setting-item checkbox">
-            <input
-              type="checkbox"
-              checked={settings.autoStart}
-              onChange={e => handleChange('autoStart', e.target.checked)}
-            />
-            <span>開機自動啟動</span>
-          </label>
+        {/* Shortcut — most important, top */}
+        <div className="setting-row shortcut-row">
+          <label>截圖辨識</label>
+          <input
+            type="text"
+            value={displayShortcut(settings.shortcuts.capture)}
+            onChange={e => handleChange('shortcuts', {
+              ...settings.shortcuts,
+              capture: toElectronShortcut(e.target.value)
+            })}
+            placeholder="Ctrl+Shift+S"
+          />
+        </div>
 
-          <label className="setting-item checkbox">
-            <input
-              type="checkbox"
-              checked={settings.minimizeToTray}
-              onChange={e => handleChange('minimizeToTray', e.target.checked)}
-            />
-            <span>最小化到系統托盤</span>
-          </label>
-
-          <label className="setting-item checkbox">
-            <input
-              type="checkbox"
-              checked={settings.autoCopy}
-              onChange={e => handleChange('autoCopy', e.target.checked)}
-            />
-            <span>辨識完成後自動複製</span>
-          </label>
-
-          <div className="setting-item">
-            <label>自動關閉延遲</label>
-            <div className="input-group">
-              <input
-                type="number"
-                min="0"
-                max="60"
-                value={settings.autoCloseDelay}
-                onChange={e => handleChange('autoCloseDelay', parseInt(e.target.value) || 0)}
-              />
-              <span>秒 (0 = 不自動關閉)</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Shortcuts */}
-        <section className="settings-section">
-          <h3>快捷鍵</h3>
-
-          <div className="setting-item">
-            <label>截圖辨識</label>
-            <input
-              type="text"
-              value={displayShortcut(settings.shortcuts.capture)}
-              onChange={e => handleChange('shortcuts', {
-                ...settings.shortcuts,
-                capture: toElectronShortcut(e.target.value)
-              })}
-              placeholder="Ctrl+Shift+S"
-            />
-          </div>
-        </section>
-
-        {/* OCR */}
-        <section className="settings-section">
-          <h3>OCR 設定</h3>
-
-          <div className="setting-item">
+        {/* Gemini API Key */}
+        <div className="setting-row api-row">
+          <div className="api-label">
             <label>Gemini API Key</label>
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="api-link">取得金鑰</a>
+          </div>
+          <div className="api-input-wrap">
             <input
-              type="password"
+              type={showApiKey ? 'text' : 'password'}
               value={settings.geminiApiKey}
               onChange={e => handleChange('geminiApiKey', e.target.value)}
-              placeholder="貼上 Google AI Studio 的 API Key"
+              placeholder="貼上 API Key（選填）"
             />
-            <div className="setting-hint">
-              前往 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免費取得
+            <button
+              className="toggle-vis"
+              onClick={() => setShowApiKey(prev => !prev)}
+              title={showApiKey ? '隱藏' : '顯示'}
+            >
+              {showApiKey ? '◉' : '○'}
+            </button>
+          </div>
+        </div>
+
+        {/* Two-column grid */}
+        <div className="settings-grid">
+          {/* Left: toggles */}
+          <div className="grid-col">
+            <h4>一般</h4>
+            <label className="toggle-row">
+              <span>開機自動啟動</span>
+              <input type="checkbox" className="toggle" checked={settings.autoStart} onChange={e => handleChange('autoStart', e.target.checked)} />
+            </label>
+            <label className="toggle-row">
+              <span>最小化到托盤</span>
+              <input type="checkbox" className="toggle" checked={settings.minimizeToTray} onChange={e => handleChange('minimizeToTray', e.target.checked)} />
+            </label>
+            <label className="toggle-row">
+              <span>辨識後自動複製</span>
+              <input type="checkbox" className="toggle" checked={settings.autoCopy} onChange={e => handleChange('autoCopy', e.target.checked)} />
+            </label>
+            <div className="toggle-row">
+              <span>自動關閉 (秒)</span>
+              <input
+                type="number" min="0" max="60"
+                value={settings.autoCloseDelay}
+                onChange={e => handleChange('autoCloseDelay', parseInt(e.target.value) || 0)}
+                className="num-input"
+              />
             </div>
           </div>
 
-          <div className="setting-item">
-            <label>辨識精度</label>
-            <div className="radio-group">
-              <label>
-                <input
-                  type="radio"
-                  name="accuracy"
-                  checked={settings.ocrAccuracy === 'fast'}
-                  onChange={() => handleChange('ocrAccuracy', 'fast')}
-                />
-                <span>快速</span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="accuracy"
-                  checked={settings.ocrAccuracy === 'balanced'}
-                  onChange={() => handleChange('ocrAccuracy', 'balanced')}
-                />
-                <span>平衡</span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="accuracy"
-                  checked={settings.ocrAccuracy === 'accurate'}
-                  onChange={() => handleChange('ocrAccuracy', 'accurate')}
-                />
-                <span>精確</span>
-              </label>
+          {/* Right: OCR */}
+          <div className="grid-col">
+            <h4>OCR</h4>
+            <div className="seg-group">
+              <label>辨識精度</label>
+              <div className="seg-btns">
+                {([['fast', '快速'], ['balanced', '平衡'], ['accurate', '精確']] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    className={`seg-btn ${settings.ocrAccuracy === val ? 'active' : ''}`}
+                    onClick={() => handleChange('ocrAccuracy', val)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
+            <label className="toggle-row">
+              <span>圖片預處理</span>
+              <input type="checkbox" className="toggle" checked={settings.preprocessEnabled} onChange={e => handleChange('preprocessEnabled', e.target.checked)} />
+            </label>
+            <label className="toggle-row">
+              <span>自動反轉深色背景</span>
+              <input type="checkbox" className="toggle" checked={settings.preprocessAutoInvert} onChange={e => handleChange('preprocessAutoInvert', e.target.checked)} disabled={!settings.preprocessEnabled} />
+            </label>
           </div>
-
-          <div className="setting-item">
-            <label>圖片預處理</label>
-            <div className="checkbox-group">
-              <label className="setting-item checkbox">
-                <input
-                  type="checkbox"
-                  checked={settings.preprocessEnabled}
-                  onChange={e => handleChange('preprocessEnabled', e.target.checked)}
-                />
-                <span>啟用預處理（提升辨識率）</span>
-              </label>
-              <label className="setting-item checkbox">
-                <input
-                  type="checkbox"
-                  checked={settings.preprocessAutoInvert}
-                  onChange={e => handleChange('preprocessAutoInvert', e.target.checked)}
-                  disabled={!settings.preprocessEnabled}
-                />
-                <span>自動反轉深色背景</span>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        {/* Appearance */}
-        <section className="settings-section">
-          <h3>外觀</h3>
-
-          <div className="setting-item">
-            <label>主題</label>
-            <div className="radio-group">
-              <label>
-                <input
-                  type="radio"
-                  name="theme"
-                  checked={settings.theme === 'light'}
-                  onChange={() => handleChange('theme', 'light')}
-                />
-                <span>淺色</span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="theme"
-                  checked={settings.theme === 'dark'}
-                  onChange={() => handleChange('theme', 'dark')}
-                />
-                <span>深色</span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="theme"
-                  checked={settings.theme === 'system'}
-                  onChange={() => handleChange('theme', 'system')}
-                />
-                <span>跟隨系統</span>
-              </label>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
 
       {/* Footer */}
       <div className="settings-footer">
-        <button className="btn secondary" onClick={onClose}>
-          取消
-        </button>
-        <button
-          className="btn primary"
-          onClick={saveSettings}
-          disabled={saving}
-        >
-          {saving ? '儲存中...' : '儲存設定'}
+        <button className="btn secondary" onClick={onClose}>取消</button>
+        <button className="btn primary" onClick={saveSettings} disabled={saving}>
+          {saving ? '儲存中...' : '儲存'}
         </button>
       </div>
     </div>
