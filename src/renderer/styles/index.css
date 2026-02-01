@@ -1,9 +1,9 @@
 /* Dark theme (default) */
 :root,
 [data-theme="dark"] {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-tertiary: #0f3460;
+  --bg-primary: #1c1c1e;
+  --bg-secondary: #2c2c2e;
+  --bg-tertiary: #3a3a3c;
   --text-primary: #eee;
   --text-secondary: #aaa;
   --text-muted: #666;
@@ -12,7 +12,7 @@
   --accent-light: rgba(99, 102, 241, 0.1);
   --success: #22c55e;
   --error: #ef4444;
-  --border: #333;
+  --border: #3a3a3c;
   --shadow: rgba(0, 0, 0, 0.3);
   --radius: 8px;
   --radius-sm: 4px;

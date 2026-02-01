@@ -52,6 +52,9 @@ export function Settings({ onClose }: SettingsProps) {
   const handleChange = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     if (!settings) return
     setSettings({ ...settings, [key]: value })
+    if (key === 'theme') {
+      document.documentElement.setAttribute('data-theme', value as string)
+    }
   }
 
   const handleLanguageChange = (newLang: Language) => {
@@ -77,13 +80,13 @@ export function Settings({ onClose }: SettingsProps) {
         <h2>{t('settings.title')}</h2>
         <div className="header-actions">
           <div className="theme-switcher">
-            {(['light', 'dark', 'system'] as const).map(themeVal => (
+            {(['light', 'dark'] as const).map(themeVal => (
               <button
                 key={themeVal}
                 className={`theme-btn ${settings.theme === themeVal ? 'active' : ''}`}
                 onClick={() => handleChange('theme', themeVal)}
               >
-                {themeVal === 'light' ? '☀' : themeVal === 'dark' ? '☾' : '⚙'}
+                {themeVal === 'light' ? '☀' : '☾'}
               </button>
             ))}
           </div>
