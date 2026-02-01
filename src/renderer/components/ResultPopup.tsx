@@ -58,6 +58,14 @@ export function ResultPopup({
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // Clear selection when loading starts
+  useEffect(() => {
+    if (isLoading) {
+      setSelectedText(null)
+      window.getSelection()?.removeAllRanges()
+    }
+  }, [isLoading])
+
   // Handle text selection
   useEffect(() => {
     const handleSelection = () => {
@@ -96,8 +104,12 @@ export function ResultPopup({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [result, selectedText])
 
+  const getCurrentText = () => {
+    return textRef.current?.textContent || result?.text || ''
+  }
+
   const handleCopy = () => {
-    const textToCopy = selectedText || result?.text
+    const textToCopy = selectedText || getCurrentText()
     if (textToCopy) {
       onCopy(textToCopy)
       setCopied(true)
@@ -106,9 +118,16 @@ export function ResultPopup({
   }
 
   const handleSearch = () => {
-    const textToSearch = selectedText || result?.text
+    const textToSearch = selectedText || getCurrentText()
     if (textToSearch) {
       onSearch(textToSearch)
+    }
+  }
+
+  const handleInstagram = () => {
+    const textToSearch = selectedText || getCurrentText()
+    if (textToSearch) {
+      onInstagram(textToSearch)
     }
   }
 
@@ -401,7 +420,7 @@ export function ResultPopup({
             </button>
             <button
               className="action-btn instagram"
-              onClick={() => onInstagram(selectedText || result?.text || '')}
+              onClick={handleInstagram}
               disabled={!result?.text}
             >
               📷 IG
@@ -414,11 +433,6 @@ export function ResultPopup({
       {isEditing && (
         <div className="selection-hint editing-hint">
           {t('result.editHint')}
-        </div>
-      )}
-      {selectedText && !isEditing && (
-        <div className="selection-hint">
-          {t('result.selectedHint').replace('{count}', String(selectedText.length))}
         </div>
       )}
     </div>
