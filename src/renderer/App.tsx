@@ -3,6 +3,7 @@ import { ScreenCapture } from './components/ScreenCapture'
 import { ResultPopup } from './components/ResultPopup'
 import { Settings } from './components/Settings'
 import { History } from './components/History'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 
 type View = 'result' | 'capture' | 'settings' | 'history'
 
@@ -12,7 +13,8 @@ interface OcrResult {
   confidence?: number
 }
 
-function App() {
+function AppContent() {
+  const { t } = useLanguage()
   const [view, setView] = useState<View>('result')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<OcrResult | null>(null)
@@ -67,7 +69,6 @@ function App() {
     // Listen for OCR cancelled
     window.electronAPI.onOcrCancelled(() => {
       setIsLoading(false)
-      // 保留圖片，清除文字
       if (result) {
         setResult({ ...result, text: '' })
       }
@@ -93,7 +94,6 @@ function App() {
     imageData: string,
     screenBounds: { x: number; y: number; width: number; height: number }
   ) => {
-    // 傳遞圖片和螢幕座標（用於 UI Automation）
     window.electronAPI.captureComplete({ imageData, screenBounds })
     setScreenshot(null)
   }
@@ -136,7 +136,6 @@ function App() {
   }
 
   const handleRecrop = (croppedImage: string) => {
-    // Re-run OCR with the cropped image
     setIsLoading(true)
     setError(null)
     setResult({ image: croppedImage, text: '' })
@@ -144,7 +143,6 @@ function App() {
   }
 
   const handleTextEdit = (newText: string) => {
-    // 用戶手動編輯文字後更新結果
     if (result) {
       setResult({ ...result, text: newText })
     }
@@ -162,10 +160,10 @@ function App() {
           confidence: geminiResult.confidence
         })
       } else {
-        setError('AI 辨識失敗，請確認已設定 API Key')
+        setError(t('app.aiError'))
       }
-    } catch (err) {
-      setError('AI 辨識發生錯誤')
+    } catch {
+      setError(t('app.aiErrorGeneric'))
     } finally {
       setIsLoading(false)
     }
@@ -219,6 +217,14 @@ function App() {
       onTextEdit={handleTextEdit}
       onGeminiOcr={handleGeminiOcr}
     />
+  )
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }
 

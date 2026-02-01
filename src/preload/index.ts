@@ -83,6 +83,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('is-gemini-available')
   },
 
+  // Language
+  languageChanged: (lang: string) => {
+    ipcRenderer.send('language-changed', lang)
+  },
+
   // Cleanup listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('screenshot-ready')
@@ -122,6 +127,7 @@ declare global {
       clearHistory: () => Promise<Array<never>>
       geminiOcr: (imageData: string) => Promise<{ text: string; method: string; confidence: number }>
       isGeminiAvailable: () => Promise<boolean>
+      languageChanged: (lang: string) => void
       removeAllListeners: () => void
     }
   }

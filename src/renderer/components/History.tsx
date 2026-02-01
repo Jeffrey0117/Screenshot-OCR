@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 import '../styles/History.css'
 
 interface HistoryItem {
@@ -16,7 +17,8 @@ interface HistoryProps {
   onInstagram: (text: string) => void
 }
 
-export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }: HistoryProps) {
+export function History({ onClose, onSelectItem, onCopy }: HistoryProps) {
+  const { t, lang } = useLanguage()
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -38,11 +40,13 @@ export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }
   }
 
   const handleClearAll = async () => {
-    if (confirm('確定要清除所有歷史紀錄？')) {
+    if (confirm(t('history.confirmClear'))) {
       await window.electronAPI.clearHistory()
       setHistory([])
     }
   }
+
+  const locale = lang === 'en' ? 'en-US' : 'zh-TW'
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -51,24 +55,24 @@ export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }
 
     // Today
     if (diff < 24 * 60 * 60 * 1000 && date.getDate() === now.getDate()) {
-      return date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+      return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
     }
     // This week
     if (diff < 7 * 24 * 60 * 60 * 1000) {
-      return date.toLocaleDateString('zh-TW', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+      return date.toLocaleDateString(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
     }
     // Older
-    return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   return (
     <div className="history-panel">
       <div className="history-header">
-        <h2>📜 歷史紀錄</h2>
+        <h2>📜 {t('history.title')}</h2>
         <div className="history-actions">
           {history.length > 0 && (
             <button className="clear-btn" onClick={handleClearAll}>
-              清除全部
+              {t('history.clearAll')}
             </button>
           )}
           <button className="close-btn" onClick={onClose}>✕</button>
@@ -77,11 +81,11 @@ export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }
 
       <div className="history-content">
         {loading ? (
-          <div className="history-loading">載入中...</div>
+          <div className="history-loading">{t('history.loading')}</div>
         ) : history.length === 0 ? (
           <div className="history-empty">
             <span className="empty-icon">📭</span>
-            <p>還沒有歷史紀錄</p>
+            <p>{t('history.empty')}</p>
           </div>
         ) : (
           <div className="history-list">
@@ -92,21 +96,21 @@ export function History({ onClose, onSelectItem, onCopy, onSearch, onInstagram }
                 onClick={() => onSelectItem(item)}
               >
                 <div className="item-content">
-                  <p className="item-text">{item.text || '(無文字)'}</p>
+                  <p className="item-text">{item.text || t('history.noText')}</p>
                   <span className="item-time">{formatTime(item.timestamp)}</span>
                 </div>
                 <div className="item-actions">
                   <button
                     className="action-btn"
                     onClick={(e) => { e.stopPropagation(); onCopy(item.text) }}
-                    title="複製"
+                    title={t('history.copy')}
                   >
                     📋
                   </button>
                   <button
                     className="action-btn delete"
                     onClick={(e) => handleDelete(item.id, e)}
-                    title="刪除"
+                    title={t('history.delete')}
                   >
                     ✕
                   </button>

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 import '../styles/ScreenCapture.css'
 
 interface ScreenBounds {
@@ -22,6 +23,7 @@ interface SelectionRect {
 }
 
 export function ScreenCapture({ screenshot, onComplete, onCancel }: ScreenCaptureProps) {
+  const { t } = useLanguage()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isSelecting, setIsSelecting] = useState(false)
   const [selection, setSelection] = useState<SelectionRect | null>(null)
@@ -214,8 +216,8 @@ export function ScreenCapture({ screenshot, onComplete, onCancel }: ScreenCaptur
         onContextMenu={handleContextMenu}
       />
       <div className="capture-instructions">
-        <span>拖曳選取區域</span>
-        <span className="shortcut">右鍵 / ESC 取消</span>
+        <span>{t('capture.dragHint')}</span>
+        <span className="shortcut">{t('capture.cancelHint')}</span>
       </div>
     </div>
   )

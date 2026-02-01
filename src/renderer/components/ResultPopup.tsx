@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 import '../styles/ResultPopup.css'
 
 interface OcrResult {
@@ -44,6 +45,7 @@ export function ResultPopup({
   onTextEdit,
   onGeminiOcr
 }: ResultPopupProps) {
+  const { t } = useLanguage()
   const [isPinned, setIsPinned] = useState(false)
   const [copied, setCopied] = useState(false)
   const [selectedText, setSelectedText] = useState<string | null>(null)
@@ -208,35 +210,35 @@ export function ResultPopup({
         <button
           className="control-btn capture"
           onClick={onCapture}
-          title="截圖"
+          title={t('result.capture')}
         >
-          📷 截圖
+          📷 {t('result.capture')}
         </button>
         <button
           className={`control-btn ${isPinned ? 'active' : ''}`}
           onClick={handleTogglePin}
-          title="釘選視窗"
+          title={t('result.pinTooltip')}
         >
-          📌 置頂
+          📌 {t('result.pin')}
         </button>
         <button
           className="control-btn"
           onClick={onOpenHistory}
-          title="歷史紀錄"
+          title={t('result.historyTooltip')}
         >
-          📜 歷史
+          📜 {t('result.history')}
         </button>
         <button
           className="control-btn"
           onClick={onOpenSettings}
-          title="設定"
+          title={t('result.settingsTooltip')}
         >
-          ⚙️ 設定
+          ⚙️ {t('result.settings')}
         </button>
         <button
           className="control-btn close"
           onClick={onClose}
-          title="關閉"
+          title={t('result.close')}
         >
           ✕
         </button>
@@ -252,7 +254,7 @@ export function ResultPopup({
         <div className="empty-content">
           <div className="empty-state">
             <img className="empty-icon-img" src="/icon.png" alt="Screenshot OCR" />
-            <p>按 Ctrl+Shift+S 截圖辨識</p>
+            <p>{t('result.emptyHint')}</p>
           </div>
         </div>
       </div>
@@ -289,11 +291,11 @@ export function ResultPopup({
         {isLoading && (
           <div className="result-loading">
             <div className="spinner"></div>
-            <span>辨識中...</span>
+            <span>{t('result.recognizing')}</span>
             {onCancelOcr && (
               <div className="loading-actions">
                 <button className="cancel-btn" onClick={onCancelOcr}>
-                  取消
+                  {t('result.cancel')}
                 </button>
               </div>
             )}
@@ -303,7 +305,7 @@ export function ResultPopup({
         {/* Error state */}
         {error && (
           <div className="result-error">
-            <span>❌ {error}</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -317,13 +319,12 @@ export function ResultPopup({
               suppressContentEditableWarning
               spellCheck={false}
               onBlur={(e) => {
-                // 當用戶編輯完成後，更新結果
                 const newText = e.currentTarget.textContent || ''
                 if (newText !== result.text && onTextEdit) {
                   onTextEdit(newText)
                 }
               }}
-              data-placeholder="點擊此處輸入或修正文字..."
+              data-placeholder={t('result.placeholder')}
             >
               {result.text || ''}
             </div>
@@ -332,7 +333,7 @@ export function ResultPopup({
                 className="expand-btn"
                 onClick={() => setIsTextExpanded(!isTextExpanded)}
               >
-                {isTextExpanded ? '▲ 收合' : '▼ 展開更多'}
+                {isTextExpanded ? `▲ ${t('result.collapse')}` : `▼ ${t('result.expand')}`}
               </button>
             )}
           </div>
@@ -341,7 +342,7 @@ export function ResultPopup({
         {/* Method & Confidence */}
         {result && !isLoading && (
           <div className="result-confidence">
-            {result.methodDisplay || (result.confidence !== undefined ? `信心度: ${Math.round(result.confidence)}%` : '')}
+            {result.methodDisplay || (result.confidence !== undefined ? `${t('result.confidence')}: ${Math.round(result.confidence)}%` : '')}
           </div>
         )}
       </div>
@@ -355,13 +356,13 @@ export function ResultPopup({
               onClick={handleApplyCrop}
               disabled={!cropStart || !cropEnd}
             >
-              ✓ 確認裁切
+              ✓ {t('result.confirmCrop')}
             </button>
             <button
               className="action-btn"
               onClick={handleCancelCrop}
             >
-              ✕ 取消
+              ✕ {t('result.cancelCrop')}
             </button>
           </>
         ) : (
@@ -371,22 +372,22 @@ export function ResultPopup({
               onClick={handleCopy}
               disabled={!result?.text}
             >
-              {copied ? '✓ 已複製' : '📋 複製'}
+              {copied ? `✓ ${t('result.copied')}` : `📋 ${t('result.copy')}`}
             </button>
             <button
               className="action-btn"
               onClick={() => setIsEditing(true)}
               disabled={!result?.image || isLoading}
-              title="重新框選區域"
+              title={t('result.cropTooltip')}
             >
-              ✂️ 裁切
+              ✂️ {t('result.crop')}
             </button>
             {onGeminiOcr && (
               <button
                 className="action-btn ai"
                 onClick={() => result?.image && onGeminiOcr(result.image)}
                 disabled={!result?.image || isLoading}
-                title="使用 AI 重新辨識"
+                title={t('result.aiTooltip')}
               >
                 🤖 AI
               </button>
@@ -396,7 +397,7 @@ export function ResultPopup({
               onClick={handleSearch}
               disabled={!result?.text}
             >
-              🔍 搜尋
+              🔍 {t('result.search')}
             </button>
             <button
               className="action-btn instagram"
@@ -412,12 +413,12 @@ export function ResultPopup({
       {/* Hint */}
       {isEditing && (
         <div className="selection-hint editing-hint">
-          拖曳選取要辨識的區域
+          {t('result.editHint')}
         </div>
       )}
       {selectedText && !isEditing && (
         <div className="selection-hint">
-          已選取 {selectedText.length} 字
+          {t('result.selectedHint').replace('{count}', String(selectedText.length))}
         </div>
       )}
     </div>

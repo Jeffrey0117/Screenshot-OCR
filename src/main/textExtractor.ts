@@ -8,6 +8,8 @@ import { getTextFromRect, UIAutomationResult } from './uiAutomation'
 import { recognizeImage, OcrResult } from './ocr'
 import { recognizeWithPaddleOcr, PaddleOcrResult } from './paddleOcr'
 import { recognizeWithGemini, isGeminiAvailable, GeminiOcrResult } from './geminiOcr'
+import { t } from '../shared/i18n'
+import { getSetting } from './store'
 
 export type ExtractionMethod = 'ui-automation' | 'gemini-ai' | 'paddle-ocr' | 'tesseract'
 
@@ -206,17 +208,18 @@ export async function extractWithGemini(imageData: string): Promise<ExtractionRe
  * 取得方法的顯示名稱
  */
 export function getMethodDisplayName(method: ExtractionMethod): string {
+  const lang = getSetting('language') || 'zh-TW'
   switch (method) {
     case 'ui-automation':
-      return '直接讀取'
+      return t('method.uiAutomation', lang)
     case 'gemini-ai':
-      return 'Gemini AI'
+      return t('method.gemini', lang)
     case 'paddle-ocr':
-      return 'PaddleOCR'
+      return t('method.paddle', lang)
     case 'tesseract':
-      return 'Tesseract OCR'
+      return t('method.tesseract', lang)
     default:
-      return '未知'
+      return t('method.unknown', lang)
   }
 }
 
@@ -224,16 +227,9 @@ export function getMethodDisplayName(method: ExtractionMethod): string {
  * 格式化信心度顯示
  */
 export function formatConfidence(method: ExtractionMethod, confidence: number): string {
-  switch (method) {
-    case 'ui-automation':
-      return '✓ 直接讀取 (100%)'
-    case 'gemini-ai':
-      return `Gemini AI (${Math.round(confidence)}%)`
-    case 'paddle-ocr':
-      return `PaddleOCR (${Math.round(confidence)}%)`
-    case 'tesseract':
-      return `Tesseract OCR (${Math.round(confidence)}%)`
-    default:
-      return `${Math.round(confidence)}%`
+  const methodName = getMethodDisplayName(method)
+  if (method === 'ui-automation') {
+    return `✓ ${methodName} (100%)`
   }
+  return `${methodName} (${Math.round(confidence)}%)`
 }

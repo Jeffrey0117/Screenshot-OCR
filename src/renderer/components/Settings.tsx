@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
+import type { Language } from '../../shared/i18n'
 import '../styles/Settings.css'
 
 interface SettingsProps {
@@ -21,9 +23,11 @@ interface AppSettings {
   preprocessAutoInvert: boolean
   geminiApiKey: string
   theme: 'light' | 'dark' | 'system'
+  language: Language
 }
 
 export function Settings({ onClose }: SettingsProps) {
+  const { t, lang, setLang } = useLanguage()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [saving, setSaving] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
@@ -50,13 +54,18 @@ export function Settings({ onClose }: SettingsProps) {
     setSettings({ ...settings, [key]: value })
   }
 
+  const handleLanguageChange = (newLang: Language) => {
+    handleChange('language', newLang)
+    setLang(newLang)
+  }
+
   const displayShortcut = (s: string) => s.replace(/CommandOrControl/g, 'Ctrl')
   const toElectronShortcut = (s: string) => s.replace(/\bCtrl\b/g, 'CommandOrControl')
 
   if (!settings) {
     return (
       <div className="settings">
-        <div className="settings-loading">載入中...</div>
+        <div className="settings-loading">{t('settings.loading')}</div>
       </div>
     )
   }
@@ -65,16 +74,16 @@ export function Settings({ onClose }: SettingsProps) {
     <div className="settings">
       {/* Header */}
       <div className="settings-header">
-        <h2>設定</h2>
+        <h2>{t('settings.title')}</h2>
         <div className="header-actions">
           <div className="theme-switcher">
-            {(['light', 'dark', 'system'] as const).map(t => (
+            {(['light', 'dark', 'system'] as const).map(themeVal => (
               <button
-                key={t}
-                className={`theme-btn ${settings.theme === t ? 'active' : ''}`}
-                onClick={() => handleChange('theme', t)}
+                key={themeVal}
+                className={`theme-btn ${settings.theme === themeVal ? 'active' : ''}`}
+                onClick={() => handleChange('theme', themeVal)}
               >
-                {t === 'light' ? '☀' : t === 'dark' ? '☾' : '⚙'}
+                {themeVal === 'light' ? '☀' : themeVal === 'dark' ? '☾' : '⚙'}
               </button>
             ))}
           </div>
@@ -82,12 +91,28 @@ export function Settings({ onClose }: SettingsProps) {
         </div>
       </div>
 
-      {/* Content — no scroll needed */}
+      {/* Content */}
       <div className="settings-body">
 
-        {/* Shortcut — most important, top */}
+        {/* Language selector */}
+        <div className="setting-row language-row">
+          <label>{t('settings.language')}</label>
+          <div className="seg-btns">
+            {([['en', 'EN'], ['zh-TW', '繁中']] as const).map(([val, label]) => (
+              <button
+                key={val}
+                className={`seg-btn ${lang === val ? 'active' : ''}`}
+                onClick={() => handleLanguageChange(val as Language)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Shortcut */}
         <div className="setting-row shortcut-row">
-          <label>截圖辨識</label>
+          <label>{t('settings.shortcutLabel')}</label>
           <input
             type="text"
             value={displayShortcut(settings.shortcuts.capture)}
@@ -102,20 +127,20 @@ export function Settings({ onClose }: SettingsProps) {
         {/* Gemini API Key */}
         <div className="setting-row api-row">
           <div className="api-label">
-            <label>Gemini API Key</label>
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="api-link">取得金鑰</a>
+            <label>{t('settings.apiKey')}</label>
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="api-link">{t('settings.getKey')}</a>
           </div>
           <div className="api-input-wrap">
             <input
               type={showApiKey ? 'text' : 'password'}
               value={settings.geminiApiKey}
               onChange={e => handleChange('geminiApiKey', e.target.value)}
-              placeholder="貼上 API Key（選填）"
+              placeholder={t('settings.apiPlaceholder')}
             />
             <button
               className="toggle-vis"
               onClick={() => setShowApiKey(prev => !prev)}
-              title={showApiKey ? '隱藏' : '顯示'}
+              title={showApiKey ? t('settings.hide') : t('settings.show')}
             >
               {showApiKey ? '◉' : '○'}
             </button>
@@ -126,21 +151,21 @@ export function Settings({ onClose }: SettingsProps) {
         <div className="settings-grid">
           {/* Left: toggles */}
           <div className="grid-col">
-            <h4>一般</h4>
+            <h4>{t('settings.general')}</h4>
             <label className="toggle-row">
-              <span>開機自動啟動</span>
+              <span>{t('settings.autoStart')}</span>
               <input type="checkbox" className="toggle" checked={settings.autoStart} onChange={e => handleChange('autoStart', e.target.checked)} />
             </label>
             <label className="toggle-row">
-              <span>最小化到托盤</span>
+              <span>{t('settings.minimizeToTray')}</span>
               <input type="checkbox" className="toggle" checked={settings.minimizeToTray} onChange={e => handleChange('minimizeToTray', e.target.checked)} />
             </label>
             <label className="toggle-row">
-              <span>辨識後自動複製</span>
+              <span>{t('settings.autoCopy')}</span>
               <input type="checkbox" className="toggle" checked={settings.autoCopy} onChange={e => handleChange('autoCopy', e.target.checked)} />
             </label>
             <div className="toggle-row">
-              <span>自動關閉 (秒)</span>
+              <span>{t('settings.autoClose')}</span>
               <input
                 type="number" min="0" max="60"
                 value={settings.autoCloseDelay}
@@ -152,15 +177,15 @@ export function Settings({ onClose }: SettingsProps) {
 
           {/* Right: OCR */}
           <div className="grid-col">
-            <h4>OCR</h4>
+            <h4>{t('settings.ocr')}</h4>
             <div className="seg-group">
-              <label>辨識精度</label>
+              <label>{t('settings.accuracy')}</label>
               <div className="seg-btns">
-                {([['fast', '快速'], ['balanced', '平衡'], ['accurate', '精確']] as const).map(([val, label]) => (
+                {([['fast', t('settings.fast')], ['balanced', t('settings.balanced')], ['accurate', t('settings.accurate')]] as [string, string][]).map(([val, label]) => (
                   <button
                     key={val}
                     className={`seg-btn ${settings.ocrAccuracy === val ? 'active' : ''}`}
-                    onClick={() => handleChange('ocrAccuracy', val)}
+                    onClick={() => handleChange('ocrAccuracy', val as 'fast' | 'balanced' | 'accurate')}
                   >
                     {label}
                   </button>
@@ -168,11 +193,11 @@ export function Settings({ onClose }: SettingsProps) {
               </div>
             </div>
             <label className="toggle-row">
-              <span>圖片預處理</span>
+              <span>{t('settings.preprocess')}</span>
               <input type="checkbox" className="toggle" checked={settings.preprocessEnabled} onChange={e => handleChange('preprocessEnabled', e.target.checked)} />
             </label>
             <label className="toggle-row">
-              <span>自動反轉深色背景</span>
+              <span>{t('settings.autoInvert')}</span>
               <input type="checkbox" className="toggle" checked={settings.preprocessAutoInvert} onChange={e => handleChange('preprocessAutoInvert', e.target.checked)} disabled={!settings.preprocessEnabled} />
             </label>
           </div>
@@ -181,9 +206,9 @@ export function Settings({ onClose }: SettingsProps) {
 
       {/* Footer */}
       <div className="settings-footer">
-        <button className="btn secondary" onClick={onClose}>取消</button>
+        <button className="btn secondary" onClick={onClose}>{t('settings.cancel')}</button>
         <button className="btn primary" onClick={saveSettings} disabled={saving}>
-          {saving ? '儲存中...' : '儲存'}
+          {saving ? t('settings.saving') : t('settings.save')}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import Store from 'electron-store'
+import type { Language } from '../shared/i18n'
 
 export interface HistoryItem {
   id: string
@@ -35,6 +36,9 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'system'
   resultPosition: 'mouse' | 'center' | 'remember'
   lastResultPosition?: { x: number; y: number }
+
+  // Language
+  language: Language
 }
 
 const defaults: AppSettings = {
@@ -58,7 +62,9 @@ const defaults: AppSettings = {
   geminiApiKey: '',
 
   theme: 'dark',
-  resultPosition: 'center'
+  resultPosition: 'center',
+
+  language: 'zh-TW'
 }
 
 let store: Store<AppSettings> | null = null

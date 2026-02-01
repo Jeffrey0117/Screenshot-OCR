@@ -12,9 +12,10 @@ import {
   desktopCapturer
 } from 'electron'
 import path from 'path'
-import { createStore, getSettings, updateSettings, addToHistory, getHistory, deleteHistoryItem, clearHistory } from './store'
+import { createStore, getSettings, getSetting, updateSettings, addToHistory, getHistory, deleteHistoryItem, clearHistory } from './store'
 import { initOcr, terminateOcr, cancelOcr } from './ocr'
 import { extractText, formatConfidence } from './textExtractor'
+import { t, type Language } from '../shared/i18n'
 
 
 let mainWindow: BrowserWindow | null = null
@@ -45,7 +46,7 @@ const RENDERER_URL = getRendererUrl()
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 480,
-    height: 400,
+    height: 473,
     show: false,
     frame: false,
     resizable: true,
@@ -123,6 +124,49 @@ function createCaptureWindow() {
 }
 
 /**
+ * Build tray context menu with current language
+ */
+function buildTrayMenu() {
+  const lang = getSetting('language') || 'zh-TW'
+  return Menu.buildFromTemplate([
+    {
+      label: t('tray.capture', lang),
+      click: () => startCapture()
+    },
+    {
+      label: t('tray.showPanel', lang),
+      click: () => showPanel()
+    },
+    {
+      label: t('tray.showLast', lang),
+      click: () => showLastResult(),
+      enabled: lastResult !== null
+    },
+    { type: 'separator' },
+    {
+      label: t('tray.settings', lang),
+      click: () => showSettings()
+    },
+    { type: 'separator' },
+    {
+      label: t('tray.quit', lang),
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+}
+
+/**
+ * Rebuild tray menu (called on language change or state change)
+ */
+function refreshTrayMenu() {
+  if (tray) {
+    tray.setContextMenu(buildTrayMenu())
+  }
+}
+
+/**
  * Create system tray
  */
 function createTray() {
@@ -154,32 +198,8 @@ function createTray() {
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADPSURBVDiNpZMxDoJAEEXfLhQkFhYewMLKzkIPYOMRbDyCN/AoXMHKK9hYWHgAC0oSEgsLNhZ7CYLIEvyT6c7M/jczO7sW/yTbJDYJfALvJSM+cIhzXOBqIgYgVdVMVXML4BK4VtVMAFT1QlVz4LGpYCIGPqraJXbxGLgHHqrKBJ7xPzOmqr5/swNyGvtbVfNGh5kFbAIW0PP/nWr0Bri1fwGwBvTDR2sB24CIiBX42uS2iNgGtkVEroj4Mf3WJt+1+6+2DbBnF9gB9gA7dW36BXjFXz4/mVL3AAAAAElFTkSuQmCC'
   ) : trayIcon)
 
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Screenshot OCR',
-      click: () => startCapture()
-    },
-    {
-      label: 'Show Last Result',
-      click: () => showLastResult(),
-      enabled: lastResult !== null
-    },
-    { type: 'separator' },
-    {
-      label: 'Settings',
-      click: () => showSettings()
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      click: () => {
-        app.quit()
-      }
-    }
-  ])
-
   tray.setToolTip('Screenshot OCR')
-  tray.setContextMenu(contextMenu)
+  tray.setContextMenu(buildTrayMenu())
 
   // Left click to start capture
   tray.on('click', () => startCapture())
@@ -255,6 +275,17 @@ async function startCapture() {
       globalShortcut.unregister('Escape')
     }
   })
+}
+
+/**
+ * Show main panel
+ */
+function showPanel() {
+  if (!mainWindow) {
+    createMainWindow()
+  }
+  mainWindow?.show()
+  mainWindow?.focus()
 }
 
 /**
@@ -342,30 +373,7 @@ async function processCapturedRegion(
     }
 
     // Update tray menu
-    if (tray) {
-      const contextMenu = Menu.buildFromTemplate([
-        {
-          label: 'Screenshot OCR',
-          click: () => startCapture()
-        },
-        {
-          label: 'Show Last Result',
-          click: () => showLastResult(),
-          enabled: true
-        },
-        { type: 'separator' },
-        {
-          label: 'Settings',
-          click: () => showSettings()
-        },
-        { type: 'separator' },
-        {
-          label: 'Quit',
-          click: () => app.quit()
-        }
-      ])
-      tray.setContextMenu(contextMenu)
-    }
+    refreshTrayMenu()
   } catch (error) {
     console.error('OCR error:', error)
     mainWindow?.webContents.send('ocr-error', {
@@ -492,6 +500,12 @@ function setupIpcHandlers() {
   ipcMain.handle('is-gemini-available', () => {
     const { isGeminiAvailable } = require('./geminiOcr')
     return isGeminiAvailable()
+  })
+
+  // Language change
+  ipcMain.on('language-changed', (_event, lang: Language) => {
+    updateSettings({ language: lang })
+    refreshTrayMenu()
   })
 }
 
