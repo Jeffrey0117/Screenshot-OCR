@@ -681,6 +681,69 @@
     }
     .tech-badge:active { transform: scale(0.95); }
 
+    /* === FAQ === */
+    .faq-section {
+      background: var(--md-surface-container-low);
+      position: relative;
+    }
+    .faq__list {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .faq-item {
+      background: var(--md-surface-container);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: box-shadow var(--duration-std) var(--ease-md);
+    }
+    .faq-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .faq-item__q {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--md-on-surface);
+      cursor: pointer;
+      user-select: none;
+      -webkit-app-region: no-drag;
+    }
+    .faq-item__q:hover {
+      color: var(--md-primary);
+    }
+    .faq-item__arrow {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      transition: transform var(--duration-std) var(--ease-md);
+      color: var(--md-on-surface-variant);
+    }
+    .faq-item.open .faq-item__arrow {
+      transform: rotate(180deg);
+    }
+    .faq-item__a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s var(--ease-md), padding 0.35s var(--ease-md);
+      padding: 0 24px;
+    }
+    .faq-item.open .faq-item__a {
+      max-height: 200px;
+      padding: 0 24px 20px;
+    }
+    .faq-item__a p {
+      font-size: 0.875rem;
+      color: var(--md-on-surface-variant);
+      line-height: 1.7;
+    }
+
     /* === Footer === */
     .footer {
       padding: 40px 0;
@@ -1022,6 +1085,67 @@
     </div>
   </section>
 
+  <!-- FAQ -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="faq.label">FAQ</span>
+        <h2 class="section-title" data-i18n="faq.title">Frequently asked questions</h2>
+      </div>
+      <div class="faq__list">
+
+        <div class="faq-item reveal reveal-delay-1">
+          <div class="faq-item__q" onclick="this.parentElement.classList.toggle('open')">
+            <span data-i18n="faq.q1">What languages does it support?</span>
+            <svg class="faq-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-item__a"><p data-i18n="faq.a1">Supports Traditional Chinese, Simplified Chinese, English, Japanese, and Korean. Multiple languages can be recognized simultaneously.</p></div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-1">
+          <div class="faq-item__q" onclick="this.parentElement.classList.toggle('open')">
+            <span data-i18n="faq.q2">Does it require an internet connection?</span>
+            <svg class="faq-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-item__a"><p data-i18n="faq.a2">No. Tesseract.js, Windows OCR, and PaddleOCR all work completely offline. Only the optional Gemini AI feature requires internet.</p></div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-2">
+          <div class="faq-item__q" onclick="this.parentElement.classList.toggle('open')">
+            <span data-i18n="faq.q3">Is Gemini AI free?</span>
+            <svg class="faq-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-item__a"><p data-i18n="faq.a3">Yes. Google provides a free tier for Gemini API. You just need to create an API key at Google AI Studio — no credit card required.</p></div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-2">
+          <div class="faq-item__q" onclick="this.parentElement.classList.toggle('open')">
+            <span data-i18n="faq.q4">Will my data be uploaded anywhere?</span>
+            <svg class="faq-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-item__a"><p data-i18n="faq.a4">All offline OCR processing stays on your machine. If you use Gemini AI, the screenshot is sent to Google's API for recognition only — nothing is stored.</p></div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-3">
+          <div class="faq-item__q" onclick="this.parentElement.classList.toggle('open')">
+            <span data-i18n="faq.q5">Does it support macOS or Linux?</span>
+            <svg class="faq-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-item__a"><p data-i18n="faq.a5">Currently Windows only. macOS and Linux support may be added in future versions.</p></div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-3">
+          <div class="faq-item__q" onclick="this.parentElement.classList.toggle('open')">
+            <span data-i18n="faq.q6">Is it open source?</span>
+            <svg class="faq-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-item__a"><p data-i18n="faq.a6">Yes, fully open source under the MIT License. You can view, modify, and contribute to the code on GitHub.</p></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
@@ -1036,6 +1160,7 @@
           <a href="#features" class="footer__link" data-i18n="footer.features">Features</a>
           <a href="#setup" class="footer__link" data-i18n="footer.setup">Setup</a>
           <a href="#shortcuts" class="footer__link" data-i18n="footer.shortcuts">Shortcuts</a>
+          <a href="#faq" class="footer__link" data-i18n="footer.faq">FAQ</a>
         </div>
       </div>
     </div>
@@ -1103,11 +1228,26 @@
         'setup.gemini.step4': 'Click the Gemini button when recognizing to use AI',
         'techStack.label': 'Tech Stack',
         'techStack.title': 'Built with modern tools',
+        'faq.label': 'FAQ',
+        'faq.title': 'Frequently asked questions',
+        'faq.q1': 'What languages does it support?',
+        'faq.a1': 'Supports Traditional Chinese, Simplified Chinese, English, Japanese, and Korean. Multiple languages can be recognized simultaneously.',
+        'faq.q2': 'Does it require an internet connection?',
+        'faq.a2': 'No. Tesseract.js, Windows OCR, and PaddleOCR all work completely offline. Only the optional Gemini AI feature requires internet.',
+        'faq.q3': 'Is Gemini AI free?',
+        'faq.a3': 'Yes. Google provides a free tier for Gemini API. You just need to create an API key at Google AI Studio \u2014 no credit card required.',
+        'faq.q4': 'Will my data be uploaded anywhere?',
+        'faq.a4': 'All offline OCR processing stays on your machine. If you use Gemini AI, the screenshot is sent to Google\u2019s API for recognition only \u2014 nothing is stored.',
+        'faq.q5': 'Does it support macOS or Linux?',
+        'faq.a5': 'Currently Windows only. macOS and Linux support may be added in future versions.',
+        'faq.q6': 'Is it open source?',
+        'faq.a6': 'Yes, fully open source under the MIT License. You can view, modify, and contribute to the code on GitHub.',
         'footer.license': 'MIT License',
         'footer.github': 'GitHub',
         'footer.features': 'Features',
         'footer.setup': 'Setup',
-        'footer.shortcuts': 'Shortcuts'
+        'footer.shortcuts': 'Shortcuts',
+        'footer.faq': 'FAQ'
       },
       zh: {
         'hero.badge': '開源且免費',
@@ -1168,11 +1308,26 @@
         'setup.gemini.step4': '辨識時點擊 Gemini 按鈕即可使用 AI',
         'techStack.label': '技術架構',
         'techStack.title': '以現代工具打造',
+        'faq.label': '常見問題',
+        'faq.title': '常見問題解答',
+        'faq.q1': '支援哪些語言？',
+        'faq.a1': '支援繁體中文、簡體中文、英文、日文及韓文，可同時辨識多種語言。',
+        'faq.q2': '需要網路連線嗎？',
+        'faq.a2': '不需要。Tesseract.js、Windows OCR 和 PaddleOCR 皆可完全離線運作。只有選配的 Gemini AI 功能需要網路。',
+        'faq.q3': 'Gemini AI 免費嗎？',
+        'faq.a3': '是的。Google 提供 Gemini API 免費額度，只需在 Google AI Studio 建立 API 金鑰即可，無需綁定信用卡。',
+        'faq.q4': '我的資料會被上傳嗎？',
+        'faq.a4': '所有離線 OCR 處理都在你的電腦上完成。若使用 Gemini AI，截圖會傳送至 Google API 進行辨識，但不會被儲存。',
+        'faq.q5': '支援 macOS 或 Linux 嗎？',
+        'faq.a5': '目前僅支援 Windows。macOS 和 Linux 版本可能在未來推出。',
+        'faq.q6': '這是開源軟體嗎？',
+        'faq.a6': '是的，完全開源，採用 MIT 授權條款。你可以在 GitHub 上查看、修改及貢獻程式碼。',
         'footer.license': 'MIT 授權條款',
         'footer.github': 'GitHub',
         'footer.features': '功能特色',
         'footer.setup': '設定指南',
-        'footer.shortcuts': '快捷鍵'
+        'footer.shortcuts': '快捷鍵',
+        'footer.faq': '常見問題'
       }
     };
 
