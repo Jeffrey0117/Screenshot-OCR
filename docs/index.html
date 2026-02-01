@@ -257,18 +257,6 @@
       animation: fadeInUp 0.6s var(--ease-md) 0.3s both;
     }
 
-    .hero__preview {
-      margin-top: 40px;
-      animation: fadeInUp 0.6s var(--ease-md) 0.45s both;
-    }
-
-    .hero__screenshot {
-      max-width: 420px;
-      width: 100%;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-
     /* === Buttons (MD3 Pill Shape) === */
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
@@ -436,6 +424,24 @@
       max-width: 260px;
       margin: 0 auto;
       line-height: 1.6;
+    }
+
+    /* === Demo Preview === */
+    .demo-section {
+      padding: 80px 0;
+    }
+
+    .demo__preview {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .demo__screenshot {
+      max-width: 480px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--md-outline-variant);
     }
 
     /* === Shortcuts (MD3 Filled Table) === */
@@ -704,9 +710,6 @@
             GitHub
           </a>
         </div>
-        <div class="hero__preview">
-          <img src="mainpic.png" alt="Screenshot OCR Preview" class="hero__screenshot">
-        </div>
       </div>
     </div>
   </section>
@@ -821,6 +824,20 @@
           <p class="step__desc" data-i18n="howItWorks.steps.2.desc">Copy, search, or save results instantly.</p>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo Preview -->
+  <section class="demo-section" id="demo">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label" data-i18n="demo.label">Preview</span>
+        <h2 class="section-title" data-i18n="demo.title">See it in action</h2>
+        <p class="section-subtitle" data-i18n="demo.subtitle">A clean, minimal interface that stays out of your way.</p>
+      </div>
+      <div class="demo__preview reveal">
+        <img src="mainpic.png" alt="Screenshot OCR in action" class="demo__screenshot">
       </div>
     </div>
   </section>
@@ -995,6 +1012,9 @@
         'howItWorks.steps.1.desc': 'AI automatically recognizes text from your screenshot.',
         'howItWorks.steps.2.title': 'Use',
         'howItWorks.steps.2.desc': 'Copy, search, or save results instantly.',
+        'demo.label': 'Preview',
+        'demo.title': 'See it in action',
+        'demo.subtitle': 'A clean, minimal interface that stays out of your way.',
         'shortcuts.label': 'Keyboard Shortcuts',
         'shortcuts.title': 'Built for speed',
         'shortcuts.subtitle': 'Access every feature without lifting your hands from the keyboard.',
@@ -1057,6 +1077,9 @@
         'howItWorks.steps.1.desc': 'AI 自動辨識截圖中的文字。',
         'howItWorks.steps.2.title': '使用',
         'howItWorks.steps.2.desc': '複製、搜尋或儲存結果，立即使用。',
+        'demo.label': '預覽',
+        'demo.title': '實際操作畫面',
+        'demo.subtitle': '簡潔的介面設計，不打擾你的工作流程。',
         'shortcuts.label': '鍵盤快捷鍵',
         'shortcuts.title': '為效率而生',
         'shortcuts.subtitle': '雙手無需離開鍵盤，即可操作所有功能。',
