@@ -13,6 +13,12 @@
   <a href="README.zh-TW.md">繁體中文</a>
 </p>
 
+## Screenshot
+
+<p align="center">
+  <img src="mainpic.png" alt="Screenshot OCR - Main Interface" width="400" />
+</p>
+
 ## Features
 
 - **Quick Capture** - Global hotkey `Ctrl+Shift+S` to trigger screenshot
@@ -48,6 +54,10 @@ npm run electron:build
 3. Drag to select the region to recognize
 4. Recognized text is automatically copied to clipboard
 5. Click "Copy" or "Google Search" for further actions
+
+<p align="center">
+  <img src="use.png" alt="Screenshot OCR - Usage Example" width="400" />
+</p>
 
 ## Shortcuts
 

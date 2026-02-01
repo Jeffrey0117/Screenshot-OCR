@@ -13,6 +13,12 @@
   <a href="README.md">English</a>
 </p>
 
+## 截圖預覽
+
+<p align="center">
+  <img src="mainpic.png" alt="Screenshot OCR - 主介面" width="400" />
+</p>
+
 ## 功能
 
 - **快捷截圖** - `Ctrl+Shift+S` 全域快捷鍵觸發截圖
@@ -48,6 +54,10 @@ npm run electron:build
 3. 拖曳選取要辨識的區域
 4. 辨識結果自動複製到剪貼簿
 5. 可點擊「複製」或「Google 搜尋」
+
+<p align="center">
+  <img src="use.png" alt="Screenshot OCR - 使用範例" width="400" />
+</p>
 
 ## 快捷鍵
 
