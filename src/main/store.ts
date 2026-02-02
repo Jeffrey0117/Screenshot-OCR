@@ -1,5 +1,30 @@
 import Store from 'electron-store'
+import { safeStorage } from 'electron'
 import type { Language } from '../shared/i18n'
+
+// Encrypt a string using OS-level encryption (DPAPI on Windows)
+function encryptValue(value: string): string {
+  if (!value) return value
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      const encrypted = safeStorage.encryptString(value)
+      return 'enc:' + encrypted.toString('base64')
+    }
+  } catch { /* fall through to plaintext */ }
+  return value
+}
+
+// Decrypt a string, handles both encrypted (enc: prefix) and legacy plaintext
+function decryptValue(value: string): string {
+  if (!value || !value.startsWith('enc:')) return value
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      const buffer = Buffer.from(value.slice(4), 'base64')
+      return safeStorage.decryptString(buffer)
+    }
+  } catch { /* corrupted data, return empty */ }
+  return ''
+}
 
 export interface HistoryItem {
   id: string
@@ -78,7 +103,11 @@ export function getSettings(): AppSettings {
   if (!store) {
     store = new Store<AppSettings>({ defaults })
   }
-  return store.store
+  const settings = store.store
+  return {
+    ...settings,
+    geminiApiKey: decryptValue(settings.geminiApiKey)
+  }
 }
 
 export function updateSettings(updates: Partial<AppSettings>) {
@@ -86,7 +115,12 @@ export function updateSettings(updates: Partial<AppSettings>) {
     store = new Store<AppSettings>({ defaults })
   }
 
-  Object.entries(updates).forEach(([key, value]) => {
+  // Encrypt API key before storing
+  const safeUpdates = updates.geminiApiKey !== undefined
+    ? { ...updates, geminiApiKey: encryptValue(updates.geminiApiKey) }
+    : updates
+
+  Object.entries(safeUpdates).forEach(([key, value]) => {
     store!.set(key as keyof AppSettings, value)
   })
 }
@@ -95,7 +129,11 @@ export function getSetting<K extends keyof AppSettings>(key: K): AppSettings[K] 
   if (!store) {
     store = new Store<AppSettings>({ defaults })
   }
-  return store.get(key)
+  const value = store.get(key)
+  if (key === 'geminiApiKey' && typeof value === 'string') {
+    return decryptValue(value) as AppSettings[K]
+  }
+  return value
 }
 
 export function setSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {

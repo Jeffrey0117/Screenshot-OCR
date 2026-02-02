@@ -430,9 +430,12 @@ function setupIpcHandlers() {
 
   // Instagram search - directly go to profile
   ipcMain.on('instagram-search', (_event, text: string) => {
-    // Remove @ if present and trim whitespace
-    const username = text.replace('@', '').trim()
-    shell.openExternal(`https://www.instagram.com/${username}`)
+    // Remove @ if present, trim, and sanitize to valid IG username chars only
+    const raw = text.replace(/@/g, '').trim()
+    const username = raw.replace(/[^a-zA-Z0-9._]/g, '')
+    if (username) {
+      shell.openExternal(`https://www.instagram.com/${encodeURIComponent(username)}`)
+    }
   })
 
   // Close result window

@@ -26,11 +26,16 @@ export interface UIElement {
  * 使用 PowerShell + System.Windows.Automation 讀取指定座標的文字
  */
 export async function getTextFromPoint(x: number, y: number): Promise<UIAutomationResult> {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return { success: false, text: '', elements: [], error: 'Invalid coordinates' }
+  }
+  const safeX = Math.round(x)
+  const safeY = Math.round(y)
   const script = `
     Add-Type -AssemblyName UIAutomationClient
     Add-Type -AssemblyName UIAutomationTypes
 
-    $point = New-Object System.Windows.Point(${x}, ${y})
+    $point = New-Object System.Windows.Point(${safeX}, ${safeY})
     $element = [System.Windows.Automation.AutomationElement]::FromPoint($point)
 
     if ($element -eq $null) {
@@ -111,12 +116,19 @@ export async function getTextFromRect(
   width: number,
   height: number
 ): Promise<UIAutomationResult> {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(width) || !Number.isFinite(height)) {
+    return { success: false, text: '', elements: [], error: 'Invalid coordinates' }
+  }
+  const safeX = Math.round(x)
+  const safeY = Math.round(y)
+  const safeW = Math.round(width)
+  const safeH = Math.round(height)
   const script = `
     Add-Type -AssemblyName UIAutomationClient
     Add-Type -AssemblyName UIAutomationTypes
     Add-Type -AssemblyName System.Drawing
 
-    $rect = New-Object System.Drawing.Rectangle(${x}, ${y}, ${width}, ${height})
+    $rect = New-Object System.Drawing.Rectangle(${safeX}, ${safeY}, ${safeW}, ${safeH})
     $results = @()
 
     # Get root element
