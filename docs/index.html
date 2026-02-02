@@ -550,6 +550,14 @@
       border: 1px solid var(--md-outline-variant);
     }
 
+    .demo__video {
+      max-width: 560px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--md-outline-variant);
+    }
+
     /* === Shortcuts (MD3 Filled Table) === */
     .shortcuts-section {
       background: var(--md-surface-container-low);
@@ -1022,7 +1030,9 @@
         <p class="section-subtitle" data-i18n="demo.subtitle">A clean, minimal interface that stays out of your way.</p>
       </div>
       <div class="demo__preview reveal">
-        <img src="use.png" alt="Screenshot OCR in action" class="demo__screenshot">
+        <video class="demo__video" autoplay loop muted playsinline>
+          <source src="vid.mp4" type="video/mp4">
+        </video>
       </div>
     </div>
   </section>
